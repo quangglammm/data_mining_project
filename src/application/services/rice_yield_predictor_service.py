@@ -2,6 +2,7 @@
 
 import logging
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
 from ...domain.entities.season import Season
@@ -86,6 +87,28 @@ class RiceYieldPredictorService:
         # Step 2: Detrend and label
         labeled_data = self.detrend_use_case.execute(yield_data)
 
+        # Export labeled data for inspection
+        labeled_data_df = pd.DataFrame(
+            [
+                {
+                    "province": d.province,
+                    "year": d.year,
+                    "season": d.season,
+                    "cultivated_area": d.cultivated_area,
+                    "rice_yield": d.rice_yield,
+                    "rice_production": d.rice_production,
+                    "yield_class": d.yield_class.value if d.yield_class else None,
+                    "expected_yield": d.expected_yield,
+                    "residual": d.residual,
+                }
+                for d in labeled_data
+            ]
+        )
+        export_dir = Path("data/exports")
+        export_dir.mkdir(parents=True, exist_ok=True)
+        labeled_data_df.to_csv(export_dir / "01_labeled_yield_data.csv", index=False)
+        logger.info(f"Exported labeled data to {export_dir / '01_labeled_yield_data.csv'}")
+
         # Step 3: Align weather data
         aligned_data = []
         for yield_record in labeled_data:
@@ -140,10 +163,44 @@ class RiceYieldPredictorService:
                 }
             )
 
+        # Export aligned data for inspection
+        aligned_data_records = []
+        for aligned in aligned_data:
+            weather_df_expanded = aligned["daily_weather_sequence"]
+            for idx, row in weather_df_expanded.iterrows():
+                aligned_data_records.append({
+                    "id_vụ": aligned["id_vụ"],
+                    "year": aligned["year"],
+                    "yield_class": aligned["yield_class"],
+                    "date": row["date"],
+                    "max_temp": row["max_temp"],
+                    "min_temp": row["min_temp"],
+                    "mean_temp": row["mean_temp"],
+                    "precipitation_sum": row["precipitation_sum"],
+                    "humidity_mean": row["humidity_mean"],
+                    "et0_mm": row["et0_mm"],
+                    "weather_code": row["weather_code"],
+                })
+        if aligned_data_records:
+            aligned_data_df = pd.DataFrame(aligned_data_records)
+            export_dir = Path("data/exports")
+            export_dir.mkdir(parents=True, exist_ok=True)
+            aligned_data_df.to_csv(export_dir / "02_aligned_weather_data.csv", index=False)
+            logger.info(f"Exported aligned weather data to {export_dir / '02_aligned_weather_data.csv'}")
+
         # Step 4: Discretize weather
         df_agg, df_sequences = self.discretize_use_case.execute(aligned_data)
 
         logger.info("Training data preparation completed")
+
+        # Export data for inspection
+        export_dir = Path("data/exports")
+        export_dir.mkdir(parents=True, exist_ok=True)
+        df_agg.to_csv(export_dir / "03_aggregated_features.csv", index=False)
+        logger.info(f"Exported aggregated features to {export_dir / '03_aggregated_features.csv'}")
+        df_sequences.to_csv(export_dir / "04_event_sequences.csv", index=False)
+        logger.info(f"Exported event sequences to {export_dir / '04_event_sequences.csv'}")
+
         return df_agg, df_sequences
 
     def train_model(
