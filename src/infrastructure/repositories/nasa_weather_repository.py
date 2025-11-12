@@ -68,6 +68,10 @@ class NASAWeatherRepository(WeatherRepository):
                 & (df["date"] <= pd.to_datetime(end_date))
             ].copy()
 
+            # Convert and set as index (drops original column)
+            df_filtered["date"] = pd.to_datetime(df_filtered["date"])
+            df_filtered = df_filtered.set_index("date").sort_index()
+
             # Handle missing values with interpolation
             numeric_cols = [
                 "max_temp",
@@ -77,11 +81,13 @@ class NASAWeatherRepository(WeatherRepository):
                 "humidity_mean",
                 "et0_mm",
             ]
+
             for col in numeric_cols:
                 if col in df_filtered.columns:
-                    df_filtered[col] = df_filtered.groupby("province")[col].transform(
-                        lambda x: x.interpolate(method="time")
-                    )
+                    df_filtered[col] = df_filtered[col].interpolate(method="time")
+
+            # Reset index → brings 'date' back safely
+            df_filtered = df_filtered.reset_index()
 
             # Calculate DTR if needed
             if "max_temp" in df_filtered.columns and "min_temp" in df_filtered.columns:

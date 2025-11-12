@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).parent.parent
 # Data paths
 DATA_DIR = BASE_DIR / "data"
 RICE_DATA_FILE = DATA_DIR / "DBSCL_agriculture_1995_2024.csv"
-WEATHER_DATA_FILE = DATA_DIR / "DBSCL_weather_1995_2024_FULL.xlsx"
+WEATHER_DATA_FILE = DATA_DIR / "DBSCL_weather_1994_2025.xlsx"
 
 # Model directory
 MODEL_DIR = BASE_DIR / "models"
