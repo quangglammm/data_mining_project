@@ -78,9 +78,7 @@ class DetrendAndLabelYieldUseCase:
 
         for (province, season), group in df.groupby(["province", "season"]):
             if len(group) < self.q:
-                logger.warning(
-                    f"Insufficient data for {province}-{season}, skipping detrending"
-                )
+                logger.warning(f"Insufficient data for {province}-{season}, skipping detrending")
                 continue
 
             # Fit linear regression: rice_yield ~ year
@@ -126,4 +124,3 @@ class DetrendAndLabelYieldUseCase:
 
         logger.info(f"Detrended and labeled {len(result)} records")
         return result
-

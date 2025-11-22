@@ -1,21 +1,24 @@
-"""Main service for rice yield prediction workflow."""
+"""Main service orchestrating the rice yield prediction workflow (2025 optimized)."""
 
 import logging
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
+
 from ...domain.entities.season import Season
 from ...domain.entities.growth_stage import GrowthStage
-from ...domain.entities.yield_class import YieldClass
 from ...domain.repositories.rice_yield_repository import RiceYieldRepository
 from ...domain.repositories.weather_repository import WeatherRepository
 from ...domain.repositories.model_repository import ModelRepository
+
+# Use cases
 from ...domain.use_cases.collect_rice_yield_data import CollectRiceYieldDataUseCase
 from ...domain.use_cases.collect_weather_data import CollectWeatherDataUseCase
 from ...domain.use_cases.detrend_and_label_yield import DetrendAndLabelYieldUseCase
 from ...domain.use_cases.discretize_weather import DiscretizeWeatherUseCase
 from ...domain.use_cases.mine_sequential_patterns import MineSequentialPatternsUseCase
+from ...domain.use_cases.mine_contrast_patterns import MineContrastPatternsUseCase
 from ...domain.use_cases.build_feature_matrix import BuildFeatureMatrixUseCase
 from ...domain.use_cases.train_model import TrainModelUseCase
 from ...domain.use_cases.predict_and_explain import PredictAndExplainUseCase
@@ -24,7 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 class RiceYieldPredictorService:
-    """Main service orchestrating the rice yield prediction workflow."""
+    """Orchestrates the full rice yield prediction pipeline with contrast pattern mining."""
+
+    EXPORT_DIR = Path("data/exports")
+    PATTERN_DIR = Path("output/latest_run")
 
     def __init__(
         self,
@@ -34,219 +40,187 @@ class RiceYieldPredictorService:
         season_definitions: Dict[str, Dict[str, Any]],
         growth_stage_definitions: Dict[str, Tuple[int, int]],
     ):
-        """
-        Initialize service.
-
-        Args:
-            rice_yield_repo: Repository for rice yield data
-            weather_repo: Repository for weather data
-            model_repo: Repository for ML models
-            season_definitions: Dictionary of season definitions
-            growth_stage_definitions: Dictionary of growth stage definitions
-        """
         self.rice_yield_repo = rice_yield_repo
         self.weather_repo = weather_repo
         self.model_repo = model_repo
 
-        # Convert season definitions to entities
+        # Convert definitions to domain entities
         self.seasons = {
             name: Season.from_dict(name, definition)
             for name, definition in season_definitions.items()
         }
-
-        # Convert growth stage definitions to entities
         self.growth_stages = {
             name: GrowthStage(name, start_day, end_day)
             for name, (start_day, end_day) in growth_stage_definitions.items()
         }
 
-        # Initialize use cases
-        self.collect_yield_use_case = CollectRiceYieldDataUseCase(rice_yield_repo)
-        self.collect_weather_use_case = CollectWeatherDataUseCase(weather_repo)
-        self.detrend_use_case = DetrendAndLabelYieldUseCase()
-        self.discretize_use_case = DiscretizeWeatherUseCase(self.growth_stages)
-        self.mine_patterns_use_case = MineSequentialPatternsUseCase()
-        self.build_features_use_case = BuildFeatureMatrixUseCase()
-        self.train_model_use_case = TrainModelUseCase()
-        self.predict_use_case = None  # Will be set after training
-        self.trained_patterns = None  # Store patterns from training
-        self.feature_names = None  # Store feature names from training
+        # Use cases (lazy-init where possible)
+        self.collect_yield_uc = CollectRiceYieldDataUseCase(rice_yield_repo)
+        self.collect_weather_uc = CollectWeatherDataUseCase(weather_repo)
+        self.detrend_uc = DetrendAndLabelYieldUseCase()
+        self.discretize_uc = DiscretizeWeatherUseCase(self.growth_stages)
+
+        # Pattern mining (new 2025 standard)
+        self.frequent_miner = MineSequentialPatternsUseCase(min_support=0.12)
+        self.contrast_miner = MineContrastPatternsUseCase(
+            growth_high=3.0, growth_low=4.0, min_support_target=0.1
+        )
+
+        self.build_features_uc = BuildFeatureMatrixUseCase()
+        self.train_model_uc = TrainModelUseCase()
+
+        # Runtime state
+        self.predict_use_case: Optional[PredictAndExplainUseCase] = None
+        self.trained_contrast_patterns: Optional[set] = None
+        self.feature_names: Optional[List[str]] = None
+        self.class_labels: Optional[List[str]] = None
+
+        # Create export directories
+        self.EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        self.PATTERN_DIR.mkdir(parents=True, exist_ok=True)
 
     def prepare_training_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Prepare training data by executing the full pipeline.
+        """Run full preprocessing pipeline and return feature-ready data."""
+        logger.info("=== Starting training data preparation ===")
 
-        Returns:
-            Tuple of (aggregated_features_df, event_sequences_df)
-        """
-        logger.info("Starting training data preparation")
+        # Step 1: Yield data
+        yield_records = self.collect_yield_uc.execute()
+        labeled_records = self.detrend_uc.execute(yield_records)
 
-        # Step 1: Collect rice yield data
-        yield_data = self.collect_yield_use_case.execute()
-
-        # Step 2: Detrend and label
-        labeled_data = self.detrend_use_case.execute(yield_data)
-
-        # Export labeled data for inspection
-        labeled_data_df = pd.DataFrame(
+        # Export labeled yield
+        labeled_df = pd.DataFrame(
             [
                 {
-                    "province": d.province,
-                    "year": d.year,
-                    "season": d.season,
-                    "cultivated_area": d.cultivated_area,
-                    "rice_yield": d.rice_yield,
-                    "rice_production": d.rice_production,
-                    "yield_class": d.yield_class.value if d.yield_class else None,
-                    "expected_yield": d.expected_yield,
-                    "residual": d.residual,
+                    "province": r.province,
+                    "year": r.year,
+                    "season": r.season,
+                    "rice_yield": r.rice_yield,
+                    "yield_class": r.yield_class.value if r.yield_class else None,
+                    "expected_yield": r.expected_yield,
+                    "residual": r.residual,
                 }
-                for d in labeled_data
+                for r in labeled_records
             ]
         )
-        export_dir = Path("data/exports")
-        export_dir.mkdir(parents=True, exist_ok=True)
-        labeled_data_df.to_csv(export_dir / "01_labeled_yield_data.csv", index=False)
-        logger.info(f"Exported labeled data to {export_dir / '01_labeled_yield_data.csv'}")
+        labeled_df.to_csv(self.EXPORT_DIR / "01_labeled_yield.csv", index=False)
 
-        # Step 3: Align weather data
+        # Step 2: Align weather
         aligned_data = []
-        for yield_record in labeled_data:
-            province = yield_record.province
-            year = yield_record.year
-            season_name = yield_record.season
+        for rec in labeled_records:
+            if rec.season not in self.seasons:
+                continue
+            season = self.seasons[rec.season]
+            start = date(rec.year + season.year_offset, season.start_month, season.start_day)
+            end = date(rec.year, season.end_month, season.end_day)
 
-            if season_name not in self.seasons:
-                logger.warning(f"Unknown season: {season_name}, skipping")
+            weather = self.collect_weather_uc.execute(rec.province, start, end)
+            if not weather:
                 continue
 
-            season = self.seasons[season_name]
-            year_offset = season.year_offset
-
-            start_date = date(year + year_offset, season.start_month, season.start_day)
-            end_date = date(year, season.end_month, season.end_day)
-
-            # Collect weather data
-            weather_data = self.collect_weather_use_case.execute(
-                province, start_date, end_date
-            )
-
-            if not weather_data:
-                logger.warning(
-                    f"No weather data for {province} {year} {season_name}, skipping"
-                )
-                continue
-
-            # Convert weather data to DataFrame
-            weather_df = pd.DataFrame(
-                [
-                    {
-                        "date": w.date,
-                        "max_temp": w.max_temp,
-                        "min_temp": w.min_temp,
-                        "mean_temp": w.mean_temp,
-                        "precipitation_sum": w.precipitation_sum,
-                        "humidity_mean": w.humidity_mean,
-                        "et0_mm": w.et0_mm,
-                        "weather_code": w.weather_code,
-                    }
-                    for w in weather_data
-                ]
-            )
-
+            weather_df = pd.DataFrame([w.to_dict() for w in weather])
             aligned_data.append(
                 {
-                    "id_vụ": f"{province}_{year}_{season_name}",
-                    "year": year,
-                    "yield_class": yield_record.yield_class.value,
+                    "id_vụ": f"{rec.province}_{rec.year}_{rec.season}",
+                    "year": rec.year,
+                    "yield_class": rec.yield_class.value,
                     "daily_weather_sequence": weather_df,
                 }
             )
 
-        # Export aligned data for inspection
-        aligned_data_records = []
-        for aligned in aligned_data:
-            weather_df_expanded = aligned["daily_weather_sequence"]
-            for idx, row in weather_df_expanded.iterrows():
-                aligned_data_records.append({
-                    "id_vụ": aligned["id_vụ"],
-                    "year": aligned["year"],
-                    "yield_class": aligned["yield_class"],
-                    "date": row["date"],
-                    "max_temp": row["max_temp"],
-                    "min_temp": row["min_temp"],
-                    "mean_temp": row["mean_temp"],
-                    "precipitation_sum": row["precipitation_sum"],
-                    "humidity_mean": row["humidity_mean"],
-                    "et0_mm": row["et0_mm"],
-                    "weather_code": row["weather_code"],
-                })
-        if aligned_data_records:
-            aligned_data_df = pd.DataFrame(aligned_data_records)
-            export_dir = Path("data/exports")
-            export_dir.mkdir(parents=True, exist_ok=True)
-            aligned_data_df.to_csv(export_dir / "02_aligned_weather_data.csv", index=False)
-            logger.info(f"Exported aligned weather data to {export_dir / '02_aligned_weather_data.csv'}")
+        # Export aligned weather
+        if aligned_data:
+            flat_records = []
+            for item in aligned_data:
+                for _, row in item["daily_weather_sequence"].iterrows():
+                    flat_records.append(
+                        {
+                            "id_vụ": item["id_vụ"],
+                            "year": item["year"],
+                            "yield_class": item["yield_class"],
+                            **row.to_dict(),
+                        }
+                    )
+            pd.DataFrame(flat_records).to_csv(
+                self.EXPORT_DIR / "02_aligned_weather.csv", index=False
+            )
 
-        # Step 4: Discretize weather
-        df_agg, df_sequences = self.discretize_use_case.execute(aligned_data)
+        # Step 3: Discretize
+        df_agg, df_sequences = self.discretize_uc.execute(aligned_data)
 
-        logger.info("Training data preparation completed")
+        # Export final features
+        df_agg.to_csv(self.EXPORT_DIR / "03_aggregated_features.csv", index=False)
+        df_sequences.to_csv(self.EXPORT_DIR / "04_event_sequences.csv", index=False)
 
-        # Export data for inspection
-        export_dir = Path("data/exports")
-        export_dir.mkdir(parents=True, exist_ok=True)
-        df_agg.to_csv(export_dir / "03_aggregated_features.csv", index=False)
-        logger.info(f"Exported aggregated features to {export_dir / '03_aggregated_features.csv'}")
-        df_sequences.to_csv(export_dir / "04_event_sequences.csv", index=False)
-        logger.info(f"Exported event sequences to {export_dir / '04_event_sequences.csv'}")
-
+        logger.info("=== Training data preparation completed ===")
         return df_agg, df_sequences
 
     def train_model(
         self, df_agg: pd.DataFrame, df_sequences: pd.DataFrame
     ) -> Tuple[Any, Dict[str, Any]]:
-        """
-        Train the ML model.
+        """Train model using contrast patterns (2025 best practice)."""
+        logger.info("=== Starting model training with contrast patterns ===")
 
-        Args:
-            df_agg: Aggregated features DataFrame
-            df_sequences: Event sequences DataFrame
-
-        Returns:
-            Tuple of (trained_model, evaluation_metrics)
-        """
-        logger.info("Starting model training")
-
-        # Step 5: Mine sequential patterns
-        all_patterns = self.mine_patterns_use_case.execute(df_sequences)
-        self.trained_patterns = all_patterns  # Store for prediction
-
-        # Step 6: Build feature matrix
-        X, y, feature_names, class_labels = self.build_features_use_case.execute(
-            df_agg, df_sequences, all_patterns
+        # Step 1: Mine frequent patterns
+        frequent_patterns = self.frequent_miner.execute(
+            df_sequences, output_dir=str(self.PATTERN_DIR / "frequent")
         )
-        self.feature_names = feature_names  # Store for prediction
 
-        # Step 7: Train model
-        model, metrics = self.train_model_use_case.execute(X, y, class_labels)
+        # Step 2: Mine contrast patterns
+        contrast_df = self.contrast_miner.execute(
+            df_sequences,
+            frequent_patterns=frequent_patterns,
+            output_dir=str(self.PATTERN_DIR / "contrast"),
+        )
 
-        # Step 8: Save model
+        if contrast_df.empty:
+            logger.error("NO CONTRAST PATTERNS FOUND — THIS SHOULD NOT HAPPEN")
+            raise ValueError("Contrast pattern mining failed — check thresholds")
+
+        patterns_to_use = contrast_df["events"].tolist()
+
+        logger.info(f"Using {len(patterns_to_use)} contrast patterns as features")
+
+        # Step 3: Build features
+        X, y, feature_names, class_labels = self.build_features_uc.execute(
+            df_agg=df_agg, df_sequences=df_sequences, patterns=patterns_to_use
+        )
+
+        # Step 4: Train model
+        model, metrics = self.train_model_uc.execute(X, y, class_labels)
+
+        # Step 5: Save model with full symbolic knowledge
         model_path = self.model_repo.save_model(
             model,
             metadata={
+                "training_date": pd.Timestamp.now().isoformat(),
+                "n_seasons": len(df_sequences),
+                "n_features": X.shape[1],
                 "feature_names": feature_names,
                 "class_labels": class_labels.tolist(),
-                "patterns": [list(p) for p in all_patterns],  # Store patterns
+                "n_contrast_patterns": len(patterns_to_use),
+                "contrast_patterns": [list(p) for p in patterns_to_use],
+                "metrics": metrics,
             },
         )
 
-        # Initialize predict use case
+        # Step 6: Initialize predictor with explanation
         self.predict_use_case = PredictAndExplainUseCase(
-            model, feature_names, class_labels
+            model=model,
+            feature_names=feature_names,
+            class_labels=class_labels,
+            contrast_patterns=patterns_to_use,
+            contrast_report_df=contrast_df if not contrast_df.empty else None,
         )
 
-        logger.info(f"Model training completed, saved to {model_path}")
+        # Store state
+        self.trained_contrast_patterns = patterns_to_use
+        self.feature_names = feature_names
+        self.class_labels = class_labels
+
+        logger.info(f"Model trained and saved: {model_path}")
+        logger.info(
+            f"Accuracy: {metrics.get('accuracy', 0):.3f} | Patterns used: {len(patterns_to_use)}"
+        )
         return model, metrics
 
     def predict(
@@ -255,92 +229,48 @@ class RiceYieldPredictorService:
         season: str,
         year: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """
-        Predict yield class for a given province and season.
-
-        Args:
-            province: Province name
-            season: Season name
-            year: Year (defaults to current year if not provided)
-
-        Returns:
-            Dictionary with prediction and explanation
-        """
+        """Predict yield class for current or future season."""
         if self.predict_use_case is None:
-            raise ValueError("Model not trained. Call train_model() first.")
+            raise RuntimeError("Model not trained. Run train_model() first.")
 
-        if year is None:
-            year = date.today().year
-
+        year = year or date.today().year
         if season not in self.seasons:
             raise ValueError(f"Unknown season: {season}")
 
-        logger.info(f"Predicting for {province} {season} {year}")
-
-        # Get season dates
         season_obj = self.seasons[season]
-        year_offset = season_obj.year_offset
-        start_date = date(year + year_offset, season_obj.start_month, season_obj.start_day)
-        end_date = date(year, season_obj.end_month, season_obj.end_day)
+        start = date(year + season_obj.year_offset, season_obj.start_month, season_obj.start_day)
+        end = date(year, season_obj.end_month, season_obj.end_day)
 
-        # Collect weather data
-        weather_data = self.collect_weather_use_case.execute(
-            province, start_date, end_date
-        )
+        weather = self.collect_weather_uc.execute(province, start, end)
+        if not weather:
+            raise ValueError(f"No weather data for {province} {start.date()} to {end.date()}")
 
-        if not weather_data:
-            raise ValueError(f"No weather data available for {province} {start_date} to {end_date}")
-
-        # Convert to DataFrame and discretize
-        weather_df = pd.DataFrame(
-            [
-                {
-                    "date": w.date,
-                    "max_temp": w.max_temp,
-                    "min_temp": w.min_temp,
-                    "mean_temp": w.mean_temp,
-                    "precipitation_sum": w.precipitation_sum,
-                    "humidity_mean": w.humidity_mean,
-                    "et0_mm": w.et0_mm,
-                }
-                for w in weather_data
-            ]
-        )
-
-        # Create aligned data structure
-        aligned_data = [
+        weather_df = pd.DataFrame([w.to_dict() for w in weather])
+        aligned = [
             {
                 "id_vụ": f"{province}_{year}_{season}",
                 "year": year,
-                "yield_class": "Unknown",  # Not needed for prediction
+                "yield_class": "Unknown",
                 "daily_weather_sequence": weather_df,
             }
         ]
 
-        # Discretize
-        df_agg, df_sequences = self.discretize_use_case.execute(aligned_data)
+        df_agg, df_sequences = self.discretize_uc.execute(aligned)
+        if df_agg is None:
+            raise RuntimeError("Weather discretization failed")
 
-        if df_agg is None or df_sequences is None:
-            raise ValueError("Failed to process weather data")
-
-        # Build features using same patterns from training
-        if self.trained_patterns is None:
-            raise ValueError(
-                "Patterns not available. Model must be trained before prediction."
-            )
-
-        # Build feature matrix using stored patterns
-        X, _, _, _ = self.build_features_use_case.execute(
-            df_agg, df_sequences, self.trained_patterns
+        X, _, _, _ = self.build_features_uc.execute(
+            df_agg=df_agg, df_sequences=df_sequences, patterns=self.trained_contrast_patterns
         )
 
-        # Make prediction
-        result = self.predict_use_case.execute(X, top_n_features=5, use_shap=True)
-
-        # Add context information
-        result["province"] = province
-        result["season"] = season
-        result["year"] = year
+        result = self.predict_use_case.execute(X, top_n_features=6, use_shap=True)
+        result.update(
+            {
+                "province": province,
+                "season": season,
+                "year": year,
+                "prediction_date": date.today().isoformat(),
+            }
+        )
 
         return result
-

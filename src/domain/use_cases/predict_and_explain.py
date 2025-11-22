@@ -1,7 +1,7 @@
-"""Use case for prediction and explanation."""
+"""Use case for prediction + rich, human-readable explanation using contrast patterns."""
 
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Set, Tuple
 import pandas as pd
 import numpy as np
 import shap
@@ -10,104 +10,168 @@ logger = logging.getLogger(__name__)
 
 
 class PredictAndExplainUseCase:
-    """Use case to predict yield class and generate explanations."""
+    """Predict yield class and explain using contrast patterns + SHAP."""
 
-    def __init__(self, model: Any, feature_names: List[str], class_labels: np.ndarray):
+    def __init__(
+        self,
+        model: Any,
+        feature_names: List[str],
+        class_labels: np.ndarray,
+        contrast_patterns: Optional[Set[Tuple[str, ...]]] = None,
+        contrast_report_df: Optional[pd.DataFrame] = None,
+    ):
         """
-        Initialize use case.
-
-        Args:
-            model: Trained ML model
-            feature_names: List of feature names
-            class_labels: Class label names
+        Initialize with trained model and contrast patterns for symbolic explanation.
         """
         self.model = model
         self.feature_names = feature_names
-        self.class_labels = class_labels
+        self.class_labels = np.array(class_labels)
+        self.contrast_patterns = contrast_patterns or set()
+        self.contrast_report_df = contrast_report_df
+
+        # Build pattern → column name mapping
+        self.pattern_to_col = {}
+        if contrast_patterns:
+            for i, pat in enumerate(sorted(contrast_patterns, key=lambda x: (len(x), x))):
+                col_name = f"pat_{i:03d}__{'__'.join(pat)}"
+                self.pattern_to_col[pat] = col_name
+
+        logger.info(
+            f"PredictAndExplainUseCase ready: {len(self.pattern_to_col)} contrast patterns loaded"
+        )
+
+    def _get_triggered_patterns(self, row: pd.Series) -> List[Dict[str, Any]]:
+        """Find which contrast patterns are active in this season."""
+        triggered = []
+        for pattern, col_name in self.pattern_to_col.items():
+            if col_name in row.index and row[col_name] == 1:
+                # Look up growth rate and type from report
+                if self.contrast_report_df is not None:
+                    match = self.contrast_report_df[
+                        self.contrast_report_df["events"].apply(lambda x: tuple(x) == pattern)
+                    ]
+                    if not match.empty:
+                        r = match.iloc[0]
+                        triggered.append(
+                            {
+                                "pattern": " → ".join(pattern),
+                                "growth_rate": round(r["growth_rate"], 2),
+                                "type": r["type"],
+                                "strength": r.get("strength", "moderate"),
+                            }
+                        )
+                else:
+                    triggered.append(
+                        {
+                            "pattern": " → ".join(pattern),
+                            "growth_rate": None,
+                            "type": "unknown",
+                            "strength": "unknown",
+                        }
+                    )
+        return triggered
 
     def execute(
         self,
         X: pd.DataFrame,
-        top_n_features: int = 5,
+        top_n_features: int = 6,
         use_shap: bool = True,
     ) -> Dict[str, Any]:
         """
-        Execute prediction and explanation.
-
-        Args:
-            X: Feature matrix for prediction
-            top_n_features: Number of top features to return
-            use_shap: Whether to use SHAP for explanation
-
-        Returns:
-            Dictionary with prediction and explanation
+        Predict and generate rich explanation.
         """
-        logger.info(f"Predicting for {len(X)} samples")
+        logger.info(f"Predicting for {len(X)} season(s)")
 
-        # Remove year column if present
-        X_clean = X.drop(columns=["year"]) if "year" in X.columns else X
+        # Clean input
+        X_clean = X.copy()
+        if "year" in X_clean.columns:
+            X_clean = X_clean.drop(columns=["year"])
 
         # Predict
         y_pred = self.model.predict(X_clean)
         y_pred_proba = (
-            self.model.predict_proba(X_clean)
-            if hasattr(self.model, "predict_proba")
-            else None
+            self.model.predict_proba(X_clean) if hasattr(self.model, "predict_proba") else None
         )
 
-        # Get predicted class name
-        predicted_class = self.class_labels[y_pred[0]] if len(y_pred) == 1 else [
-            self.class_labels[p] for p in y_pred
-        ]
+        pred_class = self.class_labels[y_pred[0]]
+        proba = y_pred_proba[0].tolist() if y_pred_proba is not None else None
 
         result = {
-            "prediction": predicted_class,
-            "prediction_encoded": y_pred[0] if len(y_pred) == 1 else y_pred.tolist(),
+            "prediction": pred_class,
+            "confidence": round(max(proba), 3) if proba else None,
             "probabilities": (
-                y_pred_proba[0].tolist() if y_pred_proba is not None else None
+                {self.class_labels[i]: round(p, 3) for i, p in enumerate(proba)} if proba else None
             ),
         }
 
-        # Generate SHAP explanation if requested
+        # === 1. Symbolic Explanation: Triggered Contrast Patterns ===
+        row = X_clean.iloc[0]
+        triggered = self._get_triggered_patterns(row)
+
+        high_yield_patterns = [t for t in triggered if "High" in t["type"]]
+        low_yield_patterns = [t for t in triggered if "Low" in t["type"]]
+
+        explanation_lines = []
+
+        if pred_class == "High" and high_yield_patterns:
+            top_pat = sorted(
+                high_yield_patterns, key=lambda x: x["growth_rate"] or 0, reverse=True
+            )[0]
+            explanation_lines.append(
+                f"This season matches {len(high_yield_patterns)} high-yield weather pattern(s)"
+            )
+            explanation_lines.append(
+                f"Strongest: {top_pat['pattern']} "
+                f"(typically {top_pat['growth_rate']}× more in High yield)"
+            )
+        elif pred_class == "Low" and low_yield_patterns:
+            top_pat = sorted(low_yield_patterns, key=lambda x: x["growth_rate"] or 0, reverse=True)[
+                0
+            ]
+            explanation_lines.append(
+                f"This season shows {len(low_yield_patterns)} risk pattern(s) linked to Low yield"
+            )
+            explanation_lines.append(
+                f"Strongest risk: {top_pat['pattern']} "
+                f"(typically {top_pat['growth_rate']}× more in Low yield)"
+            )
+        else:
+            explanation_lines.append("No strong symbolic weather patterns detected.")
+
+        result["explanation"] = " | ".join(explanation_lines)
+        result["triggered_patterns"] = triggered
+
+        # === 2. SHAP Explanation (numerical + pattern features) ===
+        top_features = {}
         if use_shap and hasattr(self.model, "predict_proba"):
             try:
-                logger.info("Generating SHAP explanation")
                 explainer = shap.TreeExplainer(self.model)
                 shap_values = explainer.shap_values(X_clean.iloc[0:1])
 
-                # Handle multi-class SHAP values
                 if isinstance(shap_values, list):
-                    # Multi-class: get values for predicted class
-                    class_idx = y_pred[0]
-                    shap_vals = shap_values[class_idx][0]
+                    shap_vals = shap_values[y_pred[0]][0]
                 else:
                     shap_vals = shap_values[0]
 
-                # Get top features
-                feature_importance = pd.Series(
-                    np.abs(shap_vals), index=self.feature_names
-                ).sort_values(ascending=False)
+                importance = pd.Series(np.abs(shap_vals), index=X_clean.columns)
+                top_idx = importance.nlargest(top_n_features).index
 
-                top_features = feature_importance.head(top_n_features).to_dict()
+                for feat in top_idx:
+                    val = shap_vals[X_clean.columns.get_loc(feat)]
+                    # Make pattern names readable
+                    if feat.startswith("pat_"):
+                        readable = " → ".join(feat.split("__")[1:])
+                        top_features[f"Weather Pattern: {readable}"] = round(val, 4)
+                    else:
+                        top_features[feat.replace("_", " ").title()] = round(val, 4)
+
                 result["top_features"] = top_features
-                result["shap_values"] = shap_vals.tolist()
-
-                logger.info(f"Top {top_n_features} features: {list(top_features.keys())}")
 
             except Exception as e:
-                logger.warning(f"SHAP explanation failed: {e}")
+                logger.warning(f"SHAP failed: {e}")
                 result["top_features"] = None
-                result["shap_values"] = None
         else:
-            # Fallback to feature importance
-            if hasattr(self.model, "feature_importances_"):
-                feature_importance = pd.Series(
-                    self.model.feature_importances_, index=self.feature_names
-                ).sort_values(ascending=False)
-                top_features = feature_importance.head(top_n_features).to_dict()
-                result["top_features"] = top_features
-            else:
-                result["top_features"] = None
+            result["top_features"] = None
 
+        logger.info(f"Prediction: {pred_class} | Explanation ready")
         return result
-

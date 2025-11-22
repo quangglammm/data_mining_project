@@ -54,9 +54,7 @@ class DiscretizeWeatherUseCase:
                     continue
 
                 temp_agg_data[stage_name].append(stage_weather["mean_temp"].mean())
-                precip_agg_data[stage_name].append(
-                    stage_weather["precipitation_sum"].sum()
-                )
+                precip_agg_data[stage_name].append(stage_weather["precipitation_sum"].sum())
 
         temp_thresholds = {
             stage: (pd.Series(data).quantile(1 / 3), pd.Series(data).quantile(2 / 3))
@@ -131,14 +129,10 @@ class DiscretizeWeatherUseCase:
         logger.info(f"Discretizing weather for {len(aligned_data)} seasons")
 
         # Extract weather sequences
-        weather_sequences = [
-            row["daily_weather_sequence"] for row in aligned_data
-        ]
+        weather_sequences = [row["daily_weather_sequence"] for row in aligned_data]
 
         # Calculate thresholds
-        temp_thresholds, precip_thresholds = self._calculate_thresholds(
-            weather_sequences
-        )
+        temp_thresholds, precip_thresholds = self._calculate_thresholds(weather_sequences)
 
         aggregated_stages = []
         event_sequences = []
@@ -177,9 +171,7 @@ class DiscretizeWeatherUseCase:
                 stages_for_season[f"{stage_name}_count_heat_days"] = (
                     stage_weather["max_temp"] > 35
                 ).sum()
-                stages_for_season[f"{stage_name}_avg_et0"] = stage_weather[
-                    "et0_mm"
-                ].mean()
+                stages_for_season[f"{stage_name}_avg_et0"] = stage_weather["et0_mm"].mean()
 
                 # Create event label
                 event = self._get_event_label(
@@ -212,4 +204,3 @@ class DiscretizeWeatherUseCase:
 
         logger.info(f"Created {len(df_sequences)} event sequences")
         return df_agg, df_sequences
-
