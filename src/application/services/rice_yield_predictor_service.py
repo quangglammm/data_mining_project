@@ -1,5 +1,6 @@
 """Main service orchestrating the rice yield prediction workflow (2025 optimized)."""
 
+from collections import Counter
 import logging
 from datetime import date
 from pathlib import Path
@@ -18,6 +19,7 @@ from ...domain.use_cases.collect_weather_data import CollectWeatherDataUseCase
 from ...domain.use_cases.detrend_and_label_yield import DetrendAndLabelYieldUseCase
 from ...domain.use_cases.discretize_weather import DiscretizeWeatherUseCase
 from ...domain.use_cases.mine_sequential_patterns import MineSequentialPatternsUseCase
+from ...domain.use_cases.mine_low_yield_patterns import MineLowYieldPatternsUseCase
 from ...domain.use_cases.mine_contrast_patterns import MineContrastPatternsUseCase
 from ...domain.use_cases.build_feature_matrix import BuildFeatureMatrixUseCase
 from ...domain.use_cases.train_model import TrainModelUseCase
@@ -61,9 +63,16 @@ class RiceYieldPredictorService:
         self.discretize_uc = DiscretizeWeatherUseCase(self.growth_stages)
 
         # Pattern mining (new 2025 standard)
-        self.frequent_miner = MineSequentialPatternsUseCase(min_support=0.12)
+        self.frequent_miner = MineSequentialPatternsUseCase(min_support=0.09)
         self.contrast_miner = MineContrastPatternsUseCase(
-            growth_high=3.0, growth_low=4.0, min_support_target=0.1
+            growth_high=2.4, growth_low=6.0, min_support_target=0.05
+        )
+        self.low_yield_miner = MineLowYieldPatternsUseCase(
+            min_support_high=0.02,
+            min_support_low=0.07,
+            growth_threshold=5.5,
+            rare_max_support=0.02,
+            min_drop_impact=0.8,
         )
 
         self.build_features_uc = BuildFeatureMatrixUseCase()
@@ -173,12 +182,68 @@ class RiceYieldPredictorService:
         )
 
         if contrast_df.empty:
-            logger.error("NO CONTRAST PATTERNS FOUND — THIS SHOULD NOT HAPPEN")
-            raise ValueError("Contrast pattern mining failed — check thresholds")
+            raise ValueError("No high-yield contrast patterns found!")
 
-        patterns_to_use = contrast_df["events"].tolist()
+        high_yield_patterns = [
+            tuple(row["events"]) for _, row in contrast_df.iterrows()
+            if row["type"] == "High"
+        ]
+        logger.info(f"FOUND {len(high_yield_patterns)} GOLDEN HIGH-YIELD SEQUENCES")
+        for i, pat in enumerate(high_yield_patterns[:3], 1):
+            logger.info(f"   #{i} → {' → '.join(pat)}")
 
-        logger.info(f"Using {len(patterns_to_use)} contrast patterns as features")
+        logger.info("MINING LOW-YIELD DESTRUCTIVE MECHANISMS (contrast + rare + breakers)...")
+        low_report = self.low_yield_miner.execute(
+            df_sequences=df_sequences,
+            high_golden_patterns=set(high_yield_patterns),
+            output_dir=str(self.PATTERN_DIR / "destructive")
+        )
+
+        # Log báo cáo đẹp như paper
+        logger.info("LOW-YIELD KILLERS DISCOVERED:")
+        if low_report["contrast_events"]:
+            logger.info(f"   • {len(low_report['contrast_events'])} Contrast Events (e.g. Đạo ôn, Nắng nóng)")
+            for e in low_report["contrast_events"][:3]:
+                logger.info(f"     → {e}")
+
+        if low_report["destructive_patterns"]:
+            logger.info(f"   • {len(low_report['destructive_patterns'])} Rare Catastrophic Patterns")
+            for pat in [p for p in low_report["destructive_patterns"][:2]]:
+                logger.info(f"     → {' → '.join(pat)}")
+
+        if low_report["breaker_events"]:
+            logger.info(f"   • {len(low_report['breaker_events'])} Golden Sequence Breakers")
+            top_breakers = Counter(low_report["breaker_events"]).most_common(3)
+            for breaker, count in top_breakers:
+                logger.info(f"     → {breaker} phá vỡ chuỗi vàng ({count} lần)")
+
+        # =================================================================
+        # 4. BUILD FINAL PATTERN SET — GOLDEN + KILLERS (THÔNG MINH NHẤT)
+        # =================================================================
+        final_patterns = set()
+
+        # 4.1. Luôn luôn dùng tất cả Golden patterns
+        final_patterns.update(high_yield_patterns)
+        logger.info(f"   Added {len(high_yield_patterns)} Golden High-yield patterns")
+
+        # 4.2. Thêm Top 5 Contrast Events (rất mạnh)
+        top_contrast = low_report["contrast_events"]
+        final_patterns.update([(e,) for e in top_contrast])
+        logger.info(f"   Added {len(top_contrast)} Top destructive events")
+
+        # 4.3. Thêm Top 3 Rare Catastrophic Patterns
+        top_rare = low_report["destructive_patterns"]
+        final_patterns.update(top_rare)
+        logger.info(f"   Added {len(top_rare)} Rare catastrophic sequences")
+
+        # 4.4. Thêm Top 5 Golden Breakers (cực kỳ quan trọng về mặt nhân quả)
+        top_breakers = [b for b, _ in low_report["breaker_events"]]
+        final_patterns.update([(e,) for e in top_breakers])
+        logger.info(f"   Added {len(top_breakers)} Golden sequence breakers")
+
+        patterns_to_use = list(final_patterns)
+        logger.info(f"TOTAL PATTERNS USED AS FEATURES: {len(patterns_to_use)}")
+        logger.info("   → High-yield Golden + Low-yield Killers = DUAL INTELLIGENCE")
 
         # Step 3: Build features
         X, y, feature_names, class_labels = self.build_features_uc.execute(
