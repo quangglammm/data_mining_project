@@ -61,8 +61,8 @@ class BuildFeatureMatrixUseCase:
         # === Pattern features — NOW FULLY SEQUENTIAL ===
         pattern_dfs = []
         for i, pat in enumerate(patterns):
-            if not pat or len(pat) < 2:
-                continue
+            # if not pat or len(pat) < 2:
+            #     continue
             col_name = f"pat_{i:03d}__{'__'.join(pat)}"
             # ← THIS IS THE LINE THAT UNLOCKS 80%+ ACCURACY
             col = event_sequences.apply(lambda seq: 1 if is_subsequence(pat, seq) else 0)

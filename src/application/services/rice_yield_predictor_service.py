@@ -4,7 +4,7 @@ from collections import Counter
 import logging
 from datetime import date
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Set, Tuple
 import pandas as pd
 
 from ...domain.entities.season import Season
@@ -63,17 +63,8 @@ class RiceYieldPredictorService:
         self.discretize_uc = DiscretizeWeatherUseCase(self.growth_stages)
 
         # Pattern mining (new 2025 standard)
-        self.frequent_miner = MineSequentialPatternsUseCase(min_support=0.09)
-        self.contrast_miner = MineContrastPatternsUseCase(
-            growth_high=2.4, growth_low=6.0, min_support_target=0.05
-        )
-        self.low_yield_miner = MineLowYieldPatternsUseCase(
-            min_support_high=0.02,
-            min_support_low=0.07,
-            growth_threshold=5.5,
-            rare_max_support=0.02,
-            min_drop_impact=0.8,
-        )
+        self.frequent_miner = MineSequentialPatternsUseCase(min_support=0.12, minlen=2, maxlen=3)
+        self.low_yield_miner = MineLowYieldPatternsUseCase()
 
         self.build_features_uc = BuildFeatureMatrixUseCase()
         self.train_model_uc = TrainModelUseCase()
@@ -170,27 +161,18 @@ class RiceYieldPredictorService:
         """Train model using contrast patterns (2025 best practice)."""
         logger.info("=== Starting model training with contrast patterns ===")
 
-        # Step 1: Mine frequent patterns
-        frequent_patterns = self.frequent_miner.execute(
+        # Step 1: Mine frequent patterns (chỉ dùng cái này)
+        high_yield_patterns: Set[Tuple[str, ...]] = self.frequent_miner.execute(
             df_sequences, output_dir=str(self.PATTERN_DIR / "frequent")
         )
 
-        # Step 2: Mine contrast patterns
-        contrast_df = self.contrast_miner.execute(
-            df_sequences,
-            frequent_patterns=frequent_patterns,
-            output_dir=str(self.PATTERN_DIR / "contrast"),
+        if not high_yield_patterns:
+            raise ValueError("No high-yield patterns found by frequent miner!")
+
+        # Nếu cần chuyển sang list hoặc kiểm tra
+        logger.info(
+            f"Đã phát hiện {len(high_yield_patterns)} high-yield pattern(s) từ frequent miner"
         )
-
-        if contrast_df.empty:
-            raise ValueError("No high-yield contrast patterns found!")
-
-        high_yield_patterns = [
-            tuple(row["events"]) for _, row in contrast_df.iterrows() if row["type"] == "High"
-        ]
-        logger.info(f"FOUND {len(high_yield_patterns)} GOLDEN HIGH-YIELD SEQUENCES")
-        for i, pat in enumerate(high_yield_patterns[:3], 1):
-            logger.info(f"   #{i} → {' → '.join(pat)}")
 
         logger.info("MINING LOW-YIELD DESTRUCTIVE MECHANISMS (contrast + rare + breakers)...")
         low_report = self.low_yield_miner.execute(
@@ -199,59 +181,31 @@ class RiceYieldPredictorService:
             output_dir=str(self.PATTERN_DIR / "destructive"),
         )
 
-        # Log báo cáo đẹp như paper
-        logger.info("LOW-YIELD KILLERS DISCOVERED:")
-        if low_report["contrast_events"]:
-            logger.info(
-                f"   • {len(low_report['contrast_events'])} Contrast Events (e.g. Đạo ôn, Nắng nóng)"
-            )
-            for e in low_report["contrast_events"][:3]:
-                logger.info(f"     → {e}")
-
-        if low_report["destructive_patterns"]:
-            logger.info(
-                f"   • {len(low_report['destructive_patterns'])} Rare Catastrophic Patterns"
-            )
-            for pat in [p for p in low_report["destructive_patterns"][:2]]:
-                logger.info(f"     → {' → '.join(pat)}")
-
-        if low_report["breaker_events"]:
-            logger.info(f"   • {len(low_report['breaker_events'])} Golden Sequence Breakers")
-            top_breakers = Counter(low_report["breaker_events"]).most_common(3)
-            for breaker, count in top_breakers:
-                logger.info(f"     → {breaker} phá vỡ chuỗi vàng ({count} lần)")
-
-        # =================================================================
-        # 4. BUILD FINAL PATTERN SET — GOLDEN + KILLERS (THÔNG MINH NHẤT)
-        # =================================================================
-        final_patterns = set()
-
-        # 4.1. Luôn luôn dùng tất cả Golden patterns
-        final_patterns.update(high_yield_patterns)
-        logger.info(f"   Added {len(high_yield_patterns)} Golden High-yield patterns")
-
-        # 4.2. Thêm Top 5 Contrast Events (rất mạnh)
+        # Log for debugging
         top_contrast = low_report["contrast_events"]
-        final_patterns.update([(e,) for e in top_contrast])
-        logger.info(f"   Added {len(top_contrast)} Top destructive events")
+        if top_contrast:
+            logger.info(f"   • {len(top_contrast)} Contrast Events")
 
-        # 4.3. Thêm Top 3 Rare Catastrophic Patterns
         top_rare = low_report["destructive_patterns"]
-        final_patterns.update(top_rare)
-        logger.info(f"   Added {len(top_rare)} Rare catastrophic sequences")
+        if top_rare:
+            logger.info(f"   • {len(top_rare)} Rare Catastrophic Patterns")
 
-        # 4.4. Thêm Top 5 Golden Breakers (cực kỳ quan trọng về mặt nhân quả)
-        top_breakers = [b for b, _ in low_report["breaker_events"]]
-        final_patterns.update([(e,) for e in top_breakers])
-        logger.info(f"   Added {len(top_breakers)} Golden sequence breakers")
+        top_breakers = low_report["breaker_events"]
+        if top_breakers:
+            logger.info(f"   • {len(top_breakers)} Golden Sequence Breakers")
 
-        patterns_to_use = list(final_patterns)
-        logger.info(f"TOTAL PATTERNS USED AS FEATURES: {len(patterns_to_use)}")
-        logger.info("   → High-yield Golden + Low-yield Killers = DUAL INTELLIGENCE")
+        # 4. BUILD FINAL PATTERN SET
+        all_candidate_patterns = set()
+        all_candidate_patterns.update(high_yield_patterns)
+        all_candidate_patterns.update(top_contrast)
+        all_candidate_patterns.update(top_rare)
+        all_candidate_patterns.update(top_breakers)
+
+        logger.info(f"Selected {len(all_candidate_patterns)} highest-impact patterns")
 
         # Step 3: Build features
         X, y, feature_names, class_labels = self.build_features_uc.execute(
-            df_agg=df_agg, df_sequences=df_sequences, patterns=patterns_to_use
+            df_agg=df_agg, df_sequences=df_sequences, patterns=all_candidate_patterns
         )
 
         # Step 4: Train model
@@ -266,8 +220,8 @@ class RiceYieldPredictorService:
                 "n_features": X.shape[1],
                 "feature_names": feature_names,
                 "class_labels": class_labels.tolist(),
-                "n_contrast_patterns": len(patterns_to_use),
-                "contrast_patterns": [list(p) for p in patterns_to_use],
+                "n_contrast_patterns": len(all_candidate_patterns),
+                "contrast_patterns": [list(p) for p in all_candidate_patterns],
                 "metrics": metrics,
             },
         )
@@ -277,18 +231,18 @@ class RiceYieldPredictorService:
             model=model,
             feature_names=feature_names,
             class_labels=class_labels,
-            contrast_patterns=patterns_to_use,
-            contrast_report_df=contrast_df if not contrast_df.empty else None,
+            contrast_patterns=all_candidate_patterns,
+            contrast_report_df=high_yield_patterns if not high_yield_patterns else None,
         )
 
         # Store state
-        self.trained_contrast_patterns = patterns_to_use
+        self.trained_contrast_patterns = all_candidate_patterns
         self.feature_names = feature_names
         self.class_labels = class_labels
 
         logger.info(f"Model trained and saved: {model_path}")
         logger.info(
-            f"Accuracy: {metrics.get('accuracy', 0):.3f} | Patterns used: {len(patterns_to_use)}"
+            f"Accuracy: {metrics.get('accuracy', 0):.3f} | Patterns used: {len(all_candidate_patterns)}"
         )
         return model, metrics
 

@@ -123,8 +123,8 @@ def main():
 
         logger.info("Loading preprocessed data...")
         try:
-            df_agg = pd.read_csv(EXPORT_DIR / "03_aggregated_features.csv")
-            df_sequences = pd.read_csv(EXPORT_DIR / "04_event_sequences.csv")
+            df_agg = pd.read_csv(EXPORT_DIR / "03_aggregated_features_v2.csv")
+            df_sequences = pd.read_csv(EXPORT_DIR / "04_event_sequences_v2.csv")
 
             # Fix: event_sequence column is stored as string → convert back to list
             import ast

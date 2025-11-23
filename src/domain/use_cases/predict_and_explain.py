@@ -95,10 +95,44 @@ class PredictAndExplainUseCase:
 
         pred_class = self.class_labels[y_pred[0]]
         proba = y_pred_proba[0].tolist() if y_pred_proba is not None else None
+        max_confidence = max(proba) if proba else None
+
+        # Determine confidence level
+        confidence_level = "Unknown"
+        if max_confidence:
+            if max_confidence >= 0.70:
+                confidence_level = "High"
+            elif max_confidence >= 0.50:
+                confidence_level = "Medium"
+            else:
+                confidence_level = "Low"
+
+        # Add warnings for low confidence
+        warnings = []
+        if max_confidence and max_confidence < 0.50:
+            warnings.append(
+                "⚠️ Low confidence prediction. Model is uncertain - "
+                "consider waiting for more complete weather data or "
+                "obtaining field observations."
+            )
+
+            # Check if probabilities are roughly equal
+            proba_sorted = sorted(proba, reverse=True)
+            if proba_sorted[0] - proba_sorted[1] < 0.15:  # Top 2 classes within 15%
+                top2_classes = [
+                    self.class_labels[i]
+                    for i in sorted(range(len(proba)), key=lambda i: proba[i], reverse=True)[:2]
+                ]
+                warnings.append(
+                    f"Model is torn between {top2_classes[0]} and {top2_classes[1]} "
+                    f"({proba_sorted[0]:.1%} vs {proba_sorted[1]:.1%})"
+                )
 
         result = {
             "prediction": pred_class,
             "confidence": round(max(proba), 3) if proba else None,
+            "confidence_level": confidence_level,
+            "warnings": warnings,
             "probabilities": (
                 {self.class_labels[i]: round(p, 3) for i, p in enumerate(proba)} if proba else None
             ),

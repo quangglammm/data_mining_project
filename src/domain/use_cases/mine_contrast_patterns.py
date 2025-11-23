@@ -33,7 +33,7 @@ class MineContrastPatternsUseCase:
         growth_high: float = 2.0,
         growth_low: float = 2.2,
         min_support_target: float = 0.05,  # 5% in target class
-        min_global_support: float = 0.01,  # 1% overall
+        min_global_support: float = 0.03,  # 1% overall
     ):
         self.growth_high = growth_high
         self.growth_low = growth_low
@@ -70,6 +70,17 @@ class MineContrastPatternsUseCase:
         logger.info(
             f"Scanning {len(frequent_patterns)} candidate patterns with sequential matching..."
         )
+
+        # Require at least 3 occurrences, OR 3% of data, whichever is larger
+        absolute_min_count = 3
+        dynamic_min_support = max(self.min_global_support, absolute_min_count / n_total)
+
+        if dynamic_min_support > self.min_global_support:
+            logger.info(
+                f"Adjusting min_global_support from {self.min_global_support:.1%} "
+                f"to {dynamic_min_support:.1%} (at least {absolute_min_count} occurrences)"
+            )
+            self.min_global_support = dynamic_min_support
 
         for pat in frequent_patterns:
             if len(pat) < 2:  # skip single events
