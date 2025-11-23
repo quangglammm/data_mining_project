@@ -111,7 +111,7 @@ class RiceYieldPredictorService:
                 for r in labeled_records
             ]
         )
-        labeled_df.to_csv(self.EXPORT_DIR / "01_labeled_yield.csv", index=False)
+        labeled_df.to_csv(self.EXPORT_DIR / "01_labeled_yield_v2.csv", index=False)
 
         # Step 2: Align weather
         aligned_data = []
@@ -126,7 +126,8 @@ class RiceYieldPredictorService:
             if not weather:
                 continue
 
-            weather_df = pd.DataFrame([w.to_dict() for w in weather])
+            weather_df = pd.DataFrame(weather)
+
             aligned_data.append(
                 {
                     "id_vụ": f"{rec.province}_{rec.year}_{rec.season}",
@@ -150,15 +151,15 @@ class RiceYieldPredictorService:
                         }
                     )
             pd.DataFrame(flat_records).to_csv(
-                self.EXPORT_DIR / "02_aligned_weather.csv", index=False
+                self.EXPORT_DIR / "02_aligned_weather_v2.csv", index=False
             )
 
         # Step 3: Discretize
         df_agg, df_sequences = self.discretize_uc.execute(aligned_data)
 
         # Export final features
-        df_agg.to_csv(self.EXPORT_DIR / "03_aggregated_features.csv", index=False)
-        df_sequences.to_csv(self.EXPORT_DIR / "04_event_sequences.csv", index=False)
+        df_agg.to_csv(self.EXPORT_DIR / "03_aggregated_features_v2.csv", index=False)
+        df_sequences.to_csv(self.EXPORT_DIR / "04_event_sequences_v2.csv", index=False)
 
         logger.info("=== Training data preparation completed ===")
         return df_agg, df_sequences
@@ -185,8 +186,7 @@ class RiceYieldPredictorService:
             raise ValueError("No high-yield contrast patterns found!")
 
         high_yield_patterns = [
-            tuple(row["events"]) for _, row in contrast_df.iterrows()
-            if row["type"] == "High"
+            tuple(row["events"]) for _, row in contrast_df.iterrows() if row["type"] == "High"
         ]
         logger.info(f"FOUND {len(high_yield_patterns)} GOLDEN HIGH-YIELD SEQUENCES")
         for i, pat in enumerate(high_yield_patterns[:3], 1):
@@ -196,18 +196,22 @@ class RiceYieldPredictorService:
         low_report = self.low_yield_miner.execute(
             df_sequences=df_sequences,
             high_golden_patterns=set(high_yield_patterns),
-            output_dir=str(self.PATTERN_DIR / "destructive")
+            output_dir=str(self.PATTERN_DIR / "destructive"),
         )
 
         # Log báo cáo đẹp như paper
         logger.info("LOW-YIELD KILLERS DISCOVERED:")
         if low_report["contrast_events"]:
-            logger.info(f"   • {len(low_report['contrast_events'])} Contrast Events (e.g. Đạo ôn, Nắng nóng)")
+            logger.info(
+                f"   • {len(low_report['contrast_events'])} Contrast Events (e.g. Đạo ôn, Nắng nóng)"
+            )
             for e in low_report["contrast_events"][:3]:
                 logger.info(f"     → {e}")
 
         if low_report["destructive_patterns"]:
-            logger.info(f"   • {len(low_report['destructive_patterns'])} Rare Catastrophic Patterns")
+            logger.info(
+                f"   • {len(low_report['destructive_patterns'])} Rare Catastrophic Patterns"
+            )
             for pat in [p for p in low_report["destructive_patterns"][:2]]:
                 logger.info(f"     → {' → '.join(pat)}")
 
