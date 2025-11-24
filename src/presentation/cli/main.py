@@ -28,7 +28,7 @@ EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 # Required exported files
 REQUIRED_FILES = [
     EXPORT_DIR / "03_aggregated_features_v2.csv",
-    EXPORT_DIR / "04_event_sequences_v2.csv",
+    EXPORT_DIR / "rice_event_sequences_fixed.csv",
 ]
 
 logging.basicConfig(
@@ -108,7 +108,7 @@ def command_train(args):
         # Load preprocessed data
         logger.info("📂 Loading preprocessed data...")
         df_agg = pd.read_csv(EXPORT_DIR / "03_aggregated_features_v2.csv")
-        df_sequences = pd.read_csv(EXPORT_DIR / "04_event_sequences_v2.csv")
+        df_sequences = pd.read_csv(EXPORT_DIR / "rice_event_sequences_fixed.csv")
 
         # Fix: event_sequence column is stored as string → convert back to list
         df_sequences["event_sequence"] = df_sequences["event_sequence"].apply(
