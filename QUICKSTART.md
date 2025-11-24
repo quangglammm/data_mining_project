@@ -20,61 +20,22 @@ pip install -r requirements.txt
 ## Quick Examples
 
 ### Train Model (CLI)
-```bash
+### Train (saves model + metadata to disk)
+```
 python main.py train
 ```
 
-### Make Prediction (CLI)
-```bash
+### Predict (loads model from disk, then predicts)
+```
 python main.py predict --province "An Giang" --season "winter_spring" --year 2020
 ```
 
-### Start API Server
-```bash
-uvicorn src.presentation.api.main:app --reload
+### Check model info
+```
+python main.py info
 ```
 
-Then visit:
-- API Docs: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
-
-### Make Prediction via API
-```bash
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "province": "An Giang",
-    "season": "winter_spring",
-    "year": 2020
-  }'
+### Use specific model file
 ```
-
-### Run Example Script
-```bash
-python example_usage.py
+python main.py predict --province "An Giang" --season "winter_spring" --year 2020 --model-path "models/model_20241124.pkl"
 ```
-
-## Project Structure Overview
-
-```
-src/
-├── domain/          # Business logic (entities, use cases, interfaces)
-├── application/     # Application services (orchestration)
-├── infrastructure/  # External adapters (repositories, APIs)
-└── presentation/    # User interfaces (CLI, FastAPI)
-```
-
-## Key Components
-
-- **Domain Layer**: Core business logic, independent of external systems
-- **Application Layer**: Orchestrates use cases
-- **Infrastructure Layer**: Implements repository interfaces, handles external APIs
-- **Presentation Layer**: Provides CLI and REST API interfaces
-
-## Next Steps
-
-1. Review `README.md` for detailed documentation
-2. Check `config/settings.py` for configuration options
-3. Run tests: `pytest tests/ -v`
-4. Explore the codebase starting from `src/domain/entities/`
-
