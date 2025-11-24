@@ -52,6 +52,7 @@ class MineSequentialPatternsUseCase:
         logger.info(f"Starting frequent pattern mining (min_support={self.min_support:.1%})")
 
         all_patterns: Set[Tuple[str, ...]] = set()
+        high_yield_patterns: Set[Tuple[str, ...]] = set()
         groups = df_sequences.groupby("yield_class")
 
         for yield_class, group in groups:
@@ -85,11 +86,14 @@ class MineSequentialPatternsUseCase:
             # Update global set
             all_patterns.update(p[0] for p in filtered_sorted)
 
+            if yield_class == "High":
+                high_yield_patterns.update(p[0] for p in filtered_sorted)
+
         # Save master list of all unique frequent patterns
         self._save_master_list(all_patterns, output_path)
 
-        logger.info(f"Frequent mining completed: {len(all_patterns)} unique patterns discovered")
-        return all_patterns
+        logger.info(f"Frequent mining completed: {len(high_yield_patterns)} unique patterns discovered")
+        return high_yield_patterns
 
     def _save_class_results(
         self,

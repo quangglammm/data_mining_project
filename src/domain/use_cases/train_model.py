@@ -14,6 +14,18 @@ from sklearn.model_selection import StratifiedKFold
 
 from src.domain.use_cases.optimize_hyperparameters import tune_hyperparameters
 
+# Add these imports at the top of your file, after the existing imports
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from lightgbm import LGBMClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import learning_curve
+import matplotlib.pyplot as plt
+import os
+
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +168,233 @@ class TrainModelUseCase:
             numeric_score = rf_numeric.score(X_clean[numeric_cols], y)
             logger.info(f"Numeric-only baseline: {numeric_score:.4f}")
 
+        rf_full = RandomForestClassifier(max_depth=5, n_estimators=100, random_state=42)
+        rf_full.fit(X_clean, y)
+        full_score = rf_full.score(X_clean, y)
+        logger.info(f"Full-feature baseline without CV: {full_score:.4f}")
+
+        # Insert this code block after the line: logger.info(f"Full-feature baseline without CV: {full_score:.4f}")
+
+        # New: Numeric-only CV baseline (RF, to compare fairly with full features)
+        logger.info("Computing numeric-only CV baseline...")
+        numeric_cv_f1 = []
+        numeric_cv_acc = []
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean[numeric_cols], y)):
+            X_train_num = X_clean.iloc[train_idx][numeric_cols]
+            X_val_num = X_clean.iloc[val_idx][numeric_cols]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            rf_num_fold = RandomForestClassifier(max_depth=5, n_estimators=100, random_state=42)
+            rf_num_fold.fit(X_train_num, y_train)
+            
+            y_val_pred = rf_num_fold.predict(X_val_num)
+            numeric_cv_f1.append(f1_score(y_val, y_val_pred, average="macro"))
+            numeric_cv_acc.append(accuracy_score(y_val, y_val_pred))
+
+        avg_num_cv_f1 = np.mean(numeric_cv_f1)
+        std_num_cv_f1 = np.std(numeric_cv_f1)
+        avg_num_cv_acc = np.mean(numeric_cv_acc)
+        std_num_cv_acc = np.std(numeric_cv_acc)
+        logger.info(f"Numeric-only CV baseline - Avg F1-macro: {avg_num_cv_f1:.4f} ± {std_num_cv_f1:.4f}")
+        logger.info(f"Numeric-only CV baseline - Avg Accuracy: {avg_num_cv_acc:.4f} ± {std_num_cv_acc:.4f}")
+
+        # New: Dummy Classifier CV baseline (stratified, for fair CV comparison)
+        logger.info("Computing Dummy Classifier CV baseline...")
+        dummy_cv_f1 = []
+        dummy_cv_acc = []
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
+            X_train, X_val = X_clean.iloc[train_idx], X_clean.iloc[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            dummy_fold = DummyClassifier(strategy='stratified', random_state=42)
+            dummy_fold.fit(X_train, y_train)
+            
+            y_val_pred = dummy_fold.predict(X_val)
+            dummy_cv_f1.append(f1_score(y_val, y_val_pred, average="macro"))
+            dummy_cv_acc.append(accuracy_score(y_val, y_val_pred))
+
+        avg_dummy_cv_f1 = np.mean(dummy_cv_f1)
+        std_dummy_cv_f1 = np.std(dummy_cv_f1)
+        avg_dummy_cv_acc = np.mean(dummy_cv_acc)
+        std_dummy_cv_acc = np.std(dummy_cv_acc)
+        logger.info(f"Dummy CV baseline - Avg F1-macro: {avg_dummy_cv_f1:.4f} ± {std_dummy_cv_f1:.4f}")
+        logger.info(f"Dummy CV baseline - Avg Accuracy: {avg_dummy_cv_acc:.4f} ± {std_dummy_cv_acc:.4f}")
+
+        # New: Logistic Regression CV baseline
+        logger.info("Computing Logistic Regression CV baseline...")
+        lr_cv_f1 = []
+        lr_cv_acc = []
+        lr_cv_gaps = []  # To log overfit gaps
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
+            X_train, X_val = X_clean.iloc[train_idx], X_clean.iloc[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            lr_pipeline = Pipeline([
+                ('scaler', StandardScaler()),
+                ('lr', LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=500, C=1.0, random_state=42))
+            ])
+            lr_pipeline.fit(X_train, y_train)
+            
+            y_train_pred = lr_pipeline.predict(X_train)
+            y_val_pred = lr_pipeline.predict(X_val)
+            
+            train_f1 = f1_score(y_train, y_train_pred, average="macro")
+            val_f1 = f1_score(y_val, y_val_pred, average="macro")
+            f1_gap = train_f1 - val_f1
+            
+            lr_cv_f1.append(val_f1)
+            lr_cv_acc.append(accuracy_score(y_val, y_val_pred))
+            lr_cv_gaps.append(f1_gap)
+
+        avg_lr_cv_f1 = np.mean(lr_cv_f1)
+        std_lr_cv_f1 = np.std(lr_cv_f1)
+        avg_lr_cv_acc = np.mean(lr_cv_acc)
+        std_lr_cv_acc = np.std(lr_cv_acc)
+        avg_lr_gap = np.mean(lr_cv_gaps)
+        logger.info(f"Logistic Regression CV - Avg F1-macro: {avg_lr_cv_f1:.4f} ± {std_lr_cv_f1:.4f}")
+        logger.info(f"Logistic Regression CV - Avg Accuracy: {avg_lr_cv_acc:.4f} ± {std_lr_cv_acc:.4f}")
+        logger.info(f"Logistic Regression CV - Avg F1 Gap: {avg_lr_gap:.1%}")
+
+        # New: KNN CV baseline
+        logger.info("Computing KNN CV baseline...")
+        knn_cv_f1 = []
+        knn_cv_acc = []
+        knn_cv_gaps = []
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
+            X_train, X_val = X_clean.iloc[train_idx], X_clean.iloc[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            knn_pipeline = Pipeline([
+                ('scaler', StandardScaler()),
+                ('knn', KNeighborsClassifier(n_neighbors=5, weights='distance'))
+            ])
+            knn_pipeline.fit(X_train, y_train)
+            
+            y_train_pred = knn_pipeline.predict(X_train)
+            y_val_pred = knn_pipeline.predict(X_val)
+            
+            train_f1 = f1_score(y_train, y_train_pred, average="macro")
+            val_f1 = f1_score(y_val, y_val_pred, average="macro")
+            f1_gap = train_f1 - val_f1
+            
+            knn_cv_f1.append(val_f1)
+            knn_cv_acc.append(accuracy_score(y_val, y_val_pred))
+            knn_cv_gaps.append(f1_gap)
+
+        avg_knn_cv_f1 = np.mean(knn_cv_f1)
+        std_knn_cv_f1 = np.std(knn_cv_f1)
+        avg_knn_cv_acc = np.mean(knn_cv_acc)
+        std_knn_cv_acc = np.std(knn_cv_acc)
+        avg_knn_gap = np.mean(knn_cv_gaps)
+        logger.info(f"KNN CV - Avg F1-macro: {avg_knn_cv_f1:.4f} ± {std_knn_cv_f1:.4f}")
+        logger.info(f"KNN CV - Avg Accuracy: {avg_knn_cv_acc:.4f} ± {std_knn_cv_acc:.4f}")
+        logger.info(f"KNN CV - Avg F1 Gap: {avg_knn_gap:.1%}")
+
+        # New: SVM CV baseline
+        logger.info("Computing SVM CV baseline...")
+        svm_cv_f1 = []
+        svm_cv_acc = []
+        svm_cv_gaps = []
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
+            X_train, X_val = X_clean.iloc[train_idx], X_clean.iloc[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            svm_pipeline = Pipeline([
+                ('scaler', StandardScaler()),
+                ('svm', SVC(kernel='rbf', C=1.0, probability=True, random_state=42))
+            ])
+            svm_pipeline.fit(X_train, y_train)
+            
+            y_train_pred = svm_pipeline.predict(X_train)
+            y_val_pred = svm_pipeline.predict(X_val)
+            
+            train_f1 = f1_score(y_train, y_train_pred, average="macro")
+            val_f1 = f1_score(y_val, y_val_pred, average="macro")
+            f1_gap = train_f1 - val_f1
+            
+            svm_cv_f1.append(val_f1)
+            svm_cv_acc.append(accuracy_score(y_val, y_val_pred))
+            svm_cv_gaps.append(f1_gap)
+
+        avg_svm_cv_f1 = np.mean(svm_cv_f1)
+        std_svm_cv_f1 = np.std(svm_cv_f1)
+        avg_svm_cv_acc = np.mean(svm_cv_acc)
+        std_svm_cv_acc = np.std(svm_cv_acc)
+        avg_svm_gap = np.mean(svm_cv_gaps)
+        logger.info(f"SVM CV - Avg F1-macro: {avg_svm_cv_f1:.4f} ± {std_svm_cv_f1:.4f}")
+        logger.info(f"SVM CV - Avg Accuracy: {avg_svm_cv_acc:.4f} ± {std_svm_cv_acc:.4f}")
+        logger.info(f"SVM CV - Avg F1 Gap: {avg_svm_gap:.1%}")
+
+        # New: LightGBM CV baseline
+        logger.info("Computing LightGBM CV baseline...")
+        lgb_cv_f1 = []
+        lgb_cv_acc = []
+        lgb_cv_gaps = []
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
+            X_train, X_val = X_clean.iloc[train_idx], X_clean.iloc[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            lgb_fold = LGBMClassifier(num_leaves=31, learning_rate=0.05, n_estimators=200, random_state=42, verbose=-1)
+            lgb_fold.fit(X_train, y_train)
+            
+            y_train_pred = lgb_fold.predict(X_train)
+            y_val_pred = lgb_fold.predict(X_val)
+            
+            train_f1 = f1_score(y_train, y_train_pred, average="macro")
+            val_f1 = f1_score(y_val, y_val_pred, average="macro")
+            f1_gap = train_f1 - val_f1
+            
+            lgb_cv_f1.append(val_f1)
+            lgb_cv_acc.append(accuracy_score(y_val, y_val_pred))
+            lgb_cv_gaps.append(f1_gap)
+
+        avg_lgb_cv_f1 = np.mean(lgb_cv_f1)
+        std_lgb_cv_f1 = np.std(lgb_cv_f1)
+        avg_lgb_cv_acc = np.mean(lgb_cv_acc)
+        std_lgb_cv_acc = np.std(lgb_cv_acc)
+        avg_lgb_gap = np.mean(lgb_cv_gaps)
+        logger.info(f"LightGBM CV - Avg F1-macro: {avg_lgb_cv_f1:.4f} ± {std_lgb_cv_f1:.4f}")
+        logger.info(f"LightGBM CV - Avg Accuracy: {avg_lgb_cv_acc:.4f} ± {std_lgb_cv_acc:.4f}")
+        logger.info(f"LightGBM CV - Avg F1 Gap: {avg_lgb_gap:.1%}")
+
+        # New: MLP (Neural Net) CV baseline
+        logger.info("Computing MLP CV baseline...")
+        mlp_cv_f1 = []
+        mlp_cv_acc = []
+        mlp_cv_gaps = []
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
+            X_train, X_val = X_clean.iloc[train_idx], X_clean.iloc[val_idx]
+            y_train, y_val = y[train_idx], y[val_idx]
+            
+            mlp_pipeline = Pipeline([
+                ('scaler', StandardScaler()),
+                ('mlp', MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, alpha=0.01, random_state=42))
+            ])
+            mlp_pipeline.fit(X_train, y_train)
+            
+            y_train_pred = mlp_pipeline.predict(X_train)
+            y_val_pred = mlp_pipeline.predict(X_val)
+            
+            train_f1 = f1_score(y_train, y_train_pred, average="macro")
+            val_f1 = f1_score(y_val, y_val_pred, average="macro")
+            f1_gap = train_f1 - val_f1
+            
+            mlp_cv_f1.append(val_f1)
+            mlp_cv_acc.append(accuracy_score(y_val, y_val_pred))
+            mlp_cv_gaps.append(f1_gap)
+
+        avg_mlp_cv_f1 = np.mean(mlp_cv_f1)
+        std_mlp_cv_f1 = np.std(mlp_cv_f1)
+        avg_mlp_cv_acc = np.mean(mlp_cv_acc)
+        std_mlp_cv_acc = np.std(mlp_cv_acc)
+        avg_mlp_gap = np.mean(mlp_cv_gaps)
+        logger.info(f"MLP CV - Avg F1-macro: {avg_mlp_cv_f1:.4f} ± {std_mlp_cv_f1:.4f}")
+        logger.info(f"MLP CV - Avg Accuracy: {avg_mlp_cv_acc:.4f} ± {std_mlp_cv_acc:.4f}")
+        logger.info(f"MLP CV - Avg F1 Gap: {avg_mlp_gap:.1%}")
+
+        rf_cv_f1 = []
+        rf_cv_acc = []
+
         # CV: Use native xgb.train() for full early stopping
         for fold, (train_idx, val_idx) in enumerate(skf.split(X_clean, y)):
             logger.info(f"Training Fold {fold + 1}/{self.n_splits}")
@@ -203,6 +442,16 @@ class TrainModelUseCase:
                 logger.info(
                     f"  Valid years: {years.iloc[val_idx].min()}–{years.iloc[val_idx].max()}"
                 )
+
+            rf_fold = RandomForestClassifier(max_depth=5, n_estimators=100, random_state=42)
+            rf_fold.fit(X_train, y_train)
+
+            y_val_rf_pred = rf_fold.predict(X_val)
+            rf_f1_fold = f1_score(y_val, y_val_rf_pred, average="macro")
+            rf_acc_fold = accuracy_score(y_val, y_val_rf_pred)
+
+            rf_cv_f1.append(rf_f1_fold)
+            rf_cv_acc.append(rf_acc_fold)
 
             # Native early stopping with DMatrix
             dtrain = xgb.DMatrix(X_train, label=y_train)
@@ -265,6 +514,10 @@ class TrainModelUseCase:
                 # Save best booster for final model
                 best_booster = fold_model
 
+
+        logger.info(f"Random Forest CV F1-macro: {np.mean(rf_cv_f1):.4f} ± {np.std(rf_cv_f1):.4f}")
+        logger.info(f"Random Forest CV Accuracy: {np.mean(rf_cv_acc):.4f} ± {np.std(rf_cv_acc):.4f}")
+
         # Compute average overfitting
         avg_f1_gap = np.mean(f1_gaps)
         logger.info(f"\nAverage train-val F1 gap across folds: {avg_f1_gap:.1%}")
@@ -281,7 +534,7 @@ class TrainModelUseCase:
         final_booster = xgb.train(
             params=self.params,
             dtrain=dtrain_full,
-            num_boost_round=1000,
+            num_boost_round=500,
             verbose_eval=False,
         )
 
