@@ -231,7 +231,7 @@ class TrainModelUseCase:
             
             lr_pipeline = Pipeline([
                 ('scaler', StandardScaler()),
-                ('lr', LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=500, C=1.0, random_state=42))
+                ('lr', LogisticRegression(solver='lbfgs', max_iter=500, C=1.0, random_state=42))
             ])
             lr_pipeline.fit(X_train, y_train)
             
@@ -368,7 +368,7 @@ class TrainModelUseCase:
             
             mlp_pipeline = Pipeline([
                 ('scaler', StandardScaler()),
-                ('mlp', MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, alpha=0.01, random_state=42))
+                ('mlp', MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, alpha=0.01, random_state=42))
             ])
             mlp_pipeline.fit(X_train, y_train)
             

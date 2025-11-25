@@ -40,6 +40,20 @@ SEASON_DEFINITIONS = {
     },
 }
 
+# FIXED THRESHOLDS
+FIXED_THRESHOLDS = {
+    "stage_1":        {"temp": {"Mát": (-99, 27.0),  "Vừa": (27.0, 28.5),  "Nóng": (28.5, 999)},
+                       "precip": {"Khô": (-99, 70),   "Vừa": (70, 150),     "Ướt": (150, 9999)}},
+    "stage_2":  {"temp": {"Mát": (-99, 26.5),  "Vừa": (26.5, 28.0),  "Nóng": (28.0, 999)},
+                 "precip": {"Khô": (-99, 100),  "Vừa": (100, 200),    "Ướt": (200, 9999)}},
+    "stage_3":  {"temp": {"Mát": (-99, 26.5),  "Vừa": (26.5, 27.5),  "Nóng": (27.5, 999)},
+                 "precip": {"Khô": (-99, 50),   "Vừa": (50, 150),     "Ướt": (150, 9999)}},
+    "stage_4":  {"temp": {"Mát": (-99, 26.2),  "Vừa": (26.2, 27.0),  "Nóng": (27.0, 999)},
+                 "precip": {"Khô": (-99, 70),   "Vừa": (70, 190),     "Ướt": (190, 9999)}},
+    "stage_5":      {"temp": {"Mát": (-99, 26.5),  "Vừa": (26.5, 27.5),  "Nóng": (27.5, 999)},
+                     "precip": {"Khô": (-99, 80),   "Vừa": (80, 230),     "Ướt": (230, 9999)}}
+}
+
 # Growth stage definitions
 GROWTH_STAGE_DEFINITIONS = {
     "stage_1": (0, 20),  # Seedling
@@ -72,4 +86,3 @@ LLM_SETTINGS = {
     "api_url": os.getenv("LLM_API_URL", ""),
     "api_key": os.getenv("LLM_API_KEY", ""),
 }
-

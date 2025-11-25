@@ -40,10 +40,12 @@ class RiceYieldPredictorService:
         model_repo: ModelRepository,
         season_definitions: Dict[str, Dict[str, Any]],
         growth_stage_definitions: Dict[str, Tuple[int, int]],
+        fixed_thresholds: Dict[str, Dict[str, Dict[str, Tuple[float, float]]]],
     ):
         self.rice_yield_repo = rice_yield_repo
         self.weather_repo = weather_repo
         self.model_repo = model_repo
+        self.fixed_thresholds = fixed_thresholds
 
         # Convert definitions to domain entities
         self.seasons = {
@@ -59,7 +61,7 @@ class RiceYieldPredictorService:
         self.collect_yield_uc = CollectRiceYieldDataUseCase(rice_yield_repo)
         self.collect_weather_uc = CollectWeatherDataUseCase(weather_repo)
         self.detrend_uc = DetrendAndLabelYieldUseCase()
-        self.discretize_uc = DiscretizeWeatherUseCase(self.growth_stages)
+        self.discretize_uc = DiscretizeWeatherUseCase(self.growth_stages, self.fixed_thresholds)
 
         # Pattern mining (new 2025 standard)
         self.frequent_miner = MineSequentialPatternsUseCase(min_support=0.12, minlen=2, maxlen=3)
@@ -102,7 +104,7 @@ class RiceYieldPredictorService:
                 for r in labeled_records
             ]
         )
-        labeled_df.to_csv(self.EXPORT_DIR / "01_labeled_yield_v2.csv", index=False)
+        labeled_df.to_csv(self.EXPORT_DIR / "01_labeled_yield_v3.csv", index=False)
 
         # Step 2: Align weather
         aligned_data = []
@@ -142,15 +144,15 @@ class RiceYieldPredictorService:
                         }
                     )
             pd.DataFrame(flat_records).to_csv(
-                self.EXPORT_DIR / "02_aligned_weather_v2.csv", index=False
+                self.EXPORT_DIR / "02_aligned_weather_v3.csv", index=False
             )
 
         # Step 3: Discretize
         df_agg, df_sequences = self.discretize_uc.execute(aligned_data)
 
         # Export final features
-        df_agg.to_csv(self.EXPORT_DIR / "03_aggregated_features_v2.csv", index=False)
-        df_sequences.to_csv(self.EXPORT_DIR / "04_event_sequences_v2.csv", index=False)
+        df_agg.to_csv(self.EXPORT_DIR / "03_aggregated_features_v3.csv", index=False)
+        df_sequences.to_csv(self.EXPORT_DIR / "04_event_sequences_v3.csv", index=False)
 
         logger.info("=== Training data preparation completed ===")
         return df_agg, df_sequences
@@ -267,7 +269,7 @@ class RiceYieldPredictorService:
 
         logger.info(f"✅ Model trained and saved: {model_path}")
         logger.info(
-            f"   Accuracy: {metrics.get('accuracy', 0):.3f} | "
+            f"   Accuracy: {metrics.get('avg_accuracy', 0):.3f} | "
             f"Patterns: {len(all_candidate_patterns)} | "
             f"Features: {len(feature_names)}"
         )
@@ -449,10 +451,30 @@ class RiceYieldPredictorService:
         )
 
         # Verify feature alignment
-        if X.shape[1] != len(self.feature_names):
-            logger.warning(
-                f"Feature mismatch: got {X.shape[1]} features, expected {len(self.feature_names)}"
-            )
+        # Align columns to the feature names used during training to avoid model errors
+        try:
+            expected = list(self.feature_names)
+            actual = list(X.columns)
+        except Exception:
+            # In case X is not a DataFrame for some reason, raise a clear error
+            raise RuntimeError("Built feature matrix X is not a pandas DataFrame")
+
+        if actual != expected:
+            missing = [c for c in expected if c not in actual]
+            extra = [c for c in actual if c not in expected]
+
+            if missing:
+                logger.warning(f"Adding {len(missing)} missing feature(s): {missing}")
+                for c in missing:
+                    X[c] = 0
+
+            if extra:
+                logger.warning(f"Dropping {len(extra)} unexpected feature(s): {extra}")
+                X = X.drop(columns=extra)
+
+            # Reorder columns to match training
+            X = X[expected]
+            logger.info(f"Aligned feature matrix: now {X.shape[1]} features (matched training order)")
 
         # Step 6: Make prediction with explanation
         result = self.predict_use_case.execute(X, top_n_features=10, use_shap=True)

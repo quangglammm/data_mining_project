@@ -25,7 +25,7 @@ class BuildFeatureMatrixUseCase:
         df_sequences: pd.DataFrame,
         patterns: Set[Tuple[str, ...]],
         pattern_type: str = "contrast",
-        feature_selection: bool = True,
+        feature_selection: bool = False,
         num_top_features: int = 40,
         is_use_mutual_info: bool = True,
     ) -> Tuple[pd.DataFrame, np.ndarray, list, np.ndarray]:
@@ -119,7 +119,7 @@ class BuildFeatureMatrixUseCase:
         if feature_selection:
             if is_use_mutual_info:
                 # --- Tính Mutual Information ---
-                logger.info("Đang tính Mutual Information scores cho tất cả 46 features...")
+                logger.info(f"Đang tính Mutual Information scores cho tất cả {X.shape[1]} features...")
                 start_time = time.time()
 
                 mi_scores = mutual_info_classif(

@@ -19,6 +19,7 @@ from config.settings import (
     MODEL_DIR,
     SEASON_DEFINITIONS,
     GROWTH_STAGE_DEFINITIONS,
+    FIXED_THRESHOLDS,
 )
 
 # === Constants ===
@@ -63,6 +64,7 @@ def initialize_service(model_dir: str = None) -> RiceYieldPredictorService:
         model_repo=model_repo,
         season_definitions=SEASON_DEFINITIONS,
         growth_stage_definitions=GROWTH_STAGE_DEFINITIONS,
+        fixed_thresholds=FIXED_THRESHOLDS,
     )
 
     return service
