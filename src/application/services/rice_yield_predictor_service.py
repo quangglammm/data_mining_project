@@ -477,7 +477,7 @@ class RiceYieldPredictorService:
             logger.info(f"Aligned feature matrix: now {X.shape[1]} features (matched training order)")
 
         # Step 6: Make prediction with explanation
-        result = self.predict_use_case.execute(X, top_n_features=10, use_shap=True)
+        result = self.predict_use_case.execute(X, top_n_features=30, use_shap=True)
 
         # Step 7: Add metadata
         result.update(

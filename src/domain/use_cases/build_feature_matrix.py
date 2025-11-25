@@ -26,8 +26,8 @@ class BuildFeatureMatrixUseCase:
         patterns: Set[Tuple[str, ...]],
         pattern_type: str = "contrast",
         feature_selection: bool = False,
-        num_top_features: int = 40,
-        is_use_mutual_info: bool = True,
+        num_top_features: int = 30,
+        is_use_mutual_info: bool = False,
     ) -> Tuple[pd.DataFrame, np.ndarray, list, np.ndarray]:
         logger.info(
             f"Building feature matrix using {len(patterns)} {pattern_type} patterns (SEQUENTIAL MATCHING)"
