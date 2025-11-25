@@ -76,6 +76,7 @@ class DetrendAndLabelYieldUseCase:
         df["expected_yield"] = None
         df["residual"] = None
 
+        # 1. First pass: detrend everything (no labeling yet)
         for (province, season), group in df.groupby(["province", "season"]):
             if len(group) < self.q:
                 logger.warning(f"Insufficient data for {province}-{season}, skipping detrending")
@@ -93,15 +94,17 @@ class DetrendAndLabelYieldUseCase:
             residuals = y - expected
 
             # Assign labels based on residuals
-            group_labels = self.robust_qcut(pd.Series(residuals), labels)
             group_expected = expected
             group_residuals = residuals
 
-            # Update DataFrame
             mask = (df["province"] == province) & (df["season"] == season)
-            df.loc[mask, "yield_class"] = group_labels.values
             df.loc[mask, "expected_yield"] = group_expected
             df.loc[mask, "residual"] = group_residuals
+
+        # 2. Second pass: global labeling on ALL residuals at once
+        valid_residuals = df["residual"].dropna()
+        global_labels = self.robust_qcut(valid_residuals, labels=labels)
+        df.loc[df["residual"].notna(), "yield_class"] = global_labels.values
 
         # Drop rows without labels
         df = df.dropna(subset=["yield_class"])

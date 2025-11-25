@@ -44,19 +44,45 @@ class FileModelRepository(ModelRepository):
         logger.info(f"Model saved successfully: {model_file}")
         return str(model_file)
 
-    def load_model(self, model_id: str) -> Any:
-        """Load model from file."""
-        model_file = Path(model_id)
-        if not model_file.exists():
-            raise FileNotFoundError(f"Model file not found: {model_id}")
+    def load_model(self, model_id: Optional[str] = None) -> Dict[str, Any]:
+        """Load model from file.
+        
+        Args:
+            model_id: Path to model file. If None, loads the latest model.
+            
+        Returns:
+            Dictionary with 'model' and 'metadata' keys
+        """
+        # If no model_id provided, find the latest model
+        if model_id is None:
+            model_files = sorted([f for f in self.model_dir.glob("model_*.pkl") if not f.stem.endswith("_metadata")])
+            if not model_files:
+                raise FileNotFoundError(f"No models found in {self.model_dir}")
+            model_file = model_files[-1]  # Get the most recent
+            logger.info(f"No model specified, using latest: {model_file.name}")
+        else:
+            model_file = Path(model_id)
+            if not model_file.exists():
+                raise FileNotFoundError(f"Model file not found: {model_id}")
 
         logger.info(f"Loading model from {model_file}")
 
+        # Load model
         with open(model_file, "rb") as f:
             model = pickle.load(f)
 
+        # Load metadata
+        metadata_file = model_file.parent / f"{model_file.stem}_metadata.pkl"
+        metadata = {}
+        if metadata_file.exists():
+            with open(metadata_file, "rb") as f:
+                metadata = pickle.load(f)
+            logger.info(f"Metadata loaded from {metadata_file.name}")
+        else:
+            logger.warning(f"No metadata file found: {metadata_file}")
+
         logger.info("Model loaded successfully")
-        return model
+        return {"model": model, "metadata": metadata}
 
     def model_exists(self, model_id: str) -> bool:
         """Check if model file exists."""

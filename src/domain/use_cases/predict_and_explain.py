@@ -95,83 +95,95 @@ class PredictAndExplainUseCase:
 
         pred_class = self.class_labels[y_pred[0]]
         proba = y_pred_proba[0].tolist() if y_pred_proba is not None else None
+        max_confidence = max(proba) if proba else None
+
+        # Determine confidence level
+        confidence_level = "Unknown"
+        if max_confidence:
+            if max_confidence >= 0.70:
+                confidence_level = "High"
+            elif max_confidence >= 0.50:
+                confidence_level = "Medium"
+            else:
+                confidence_level = "Low"
+
+        # Add warnings for low confidence
+        warnings = []
+        if max_confidence and max_confidence < 0.50:
+            warnings.append(
+                "⚠️ Low confidence prediction. Model is uncertain - "
+                "consider waiting for more complete weather data or "
+                "obtaining field observations."
+            )
+
+            # Check if probabilities are roughly equal
+            proba_sorted = sorted(proba, reverse=True)
+            if proba_sorted[0] - proba_sorted[1] < 0.15:  # Top 2 classes within 15%
+                top2_classes = [
+                    self.class_labels[i]
+                    for i in sorted(range(len(proba)), key=lambda i: proba[i], reverse=True)[:2]
+                ]
+                warnings.append(
+                    f"Model is torn between {top2_classes[0]} and {top2_classes[1]} "
+                    f"({proba_sorted[0]:.1%} vs {proba_sorted[1]:.1%})"
+                )
 
         result = {
             "prediction": pred_class,
             "confidence": round(max(proba), 3) if proba else None,
+            "confidence_level": confidence_level,
+            "warnings": warnings,
             "probabilities": (
                 {self.class_labels[i]: round(p, 3) for i, p in enumerate(proba)} if proba else None
             ),
         }
 
         # === 1. Symbolic Explanation: Triggered Contrast Patterns ===
-        row = X_clean.iloc[0]
-        triggered = self._get_triggered_patterns(row)
+        # row = X_clean.iloc[0]
+        # triggered = self._get_triggered_patterns(row)
 
-        high_yield_patterns = [t for t in triggered if "High" in t["type"]]
-        low_yield_patterns = [t for t in triggered if "Low" in t["type"]]
+        # high_yield_patterns = [t for t in triggered if "High" in t["type"]]
+        # low_yield_patterns = [t for t in triggered if "Low" in t["type"]]
 
-        explanation_lines = []
+        # explanation_lines = []
 
-        if pred_class == "High" and high_yield_patterns:
-            top_pat = sorted(
-                high_yield_patterns, key=lambda x: x["growth_rate"] or 0, reverse=True
-            )[0]
-            explanation_lines.append(
-                f"This season matches {len(high_yield_patterns)} high-yield weather pattern(s)"
-            )
-            explanation_lines.append(
-                f"Strongest: {top_pat['pattern']} "
-                f"(typically {top_pat['growth_rate']}× more in High yield)"
-            )
-        elif pred_class == "Low" and low_yield_patterns:
-            top_pat = sorted(low_yield_patterns, key=lambda x: x["growth_rate"] or 0, reverse=True)[
-                0
-            ]
-            explanation_lines.append(
-                f"This season shows {len(low_yield_patterns)} risk pattern(s) linked to Low yield"
-            )
-            explanation_lines.append(
-                f"Strongest risk: {top_pat['pattern']} "
-                f"(typically {top_pat['growth_rate']}× more in Low yield)"
-            )
-        else:
-            explanation_lines.append("No strong symbolic weather patterns detected.")
+        # if pred_class == "High" and high_yield_patterns:
+        #     top_pat = sorted(
+        #         high_yield_patterns, key=lambda x: x["growth_rate"] or 0, reverse=True
+        #     )[0]
+        #     explanation_lines.append(
+        #         f"This season matches {len(high_yield_patterns)} high-yield weather pattern(s)"
+        #     )
+        #     explanation_lines.append(
+        #         f"Strongest: {top_pat['pattern']} "
+        #         f"(typically {top_pat['growth_rate']}× more in High yield)"
+        #     )
+        # elif pred_class == "Low" and low_yield_patterns:
+        #     top_pat = sorted(low_yield_patterns, key=lambda x: x["growth_rate"] or 0, reverse=True)[
+        #         0
+        #     ]
+        #     explanation_lines.append(
+        #         f"This season shows {len(low_yield_patterns)} risk pattern(s) linked to Low yield"
+        #     )
+        #     explanation_lines.append(
+        #         f"Strongest risk: {top_pat['pattern']} "
+        #         f"(typically {top_pat['growth_rate']}× more in Low yield)"
+        #     )
+        # else:
+        #     explanation_lines.append("No strong symbolic weather patterns detected.")
 
-        result["explanation"] = " | ".join(explanation_lines)
-        result["triggered_patterns"] = triggered
+        # result["explanation"] = " | ".join(explanation_lines)
+        # result["triggered_patterns"] = triggered
 
         # === 2. SHAP Explanation (numerical + pattern features) ===
+        # Always compute SHAP for every prediction (regardless of confidence level)
         top_features = {}
-        if use_shap and hasattr(self.model, "predict_proba"):
-            try:
-                explainer = shap.TreeExplainer(self.model)
-                shap_values = explainer.shap_values(X_clean.iloc[0:1])
-
-                if isinstance(shap_values, list):
-                    shap_vals = shap_values[y_pred[0]][0]
-                else:
-                    shap_vals = shap_values[0]
-
-                importance = pd.Series(np.abs(shap_vals), index=X_clean.columns)
-                top_idx = importance.nlargest(top_n_features).index
-
-                for feat in top_idx:
-                    val = shap_vals[X_clean.columns.get_loc(feat)]
-                    # Make pattern names readable
-                    if feat.startswith("pat_"):
-                        readable = " → ".join(feat.split("__")[1:])
-                        top_features[f"Weather Pattern: {readable}"] = round(val, 4)
-                    else:
-                        top_features[feat.replace("_", " ").title()] = round(val, 4)
-
-                result["top_features"] = top_features
-
-            except Exception as e:
-                logger.warning(f"SHAP failed: {e}")
-                result["top_features"] = None
-        else:
-            result["top_features"] = None
+        if use_shap:
+            top_features = self._compute_shap_features(
+                X_clean.iloc[0:1], y_pred[0], top_n_features
+            )
+        
+        result["top_features"] = top_features if top_features else None
 
         logger.info(f"Prediction: {pred_class} | Explanation ready")
         return result
