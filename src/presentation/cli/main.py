@@ -13,6 +13,7 @@ from ...infrastructure.repositories.gso_rice_yield_repository import GSORiceYiel
 from ...infrastructure.repositories.nasa_weather_repository import NASAWeatherRepository
 from ...infrastructure.repositories.file_model_repository import FileModelRepository
 
+
 from config.settings import (
     RICE_DATA_FILE,
     WEATHER_DATA_FILE,
@@ -214,9 +215,9 @@ def command_predict(args):
         # Probabilities
         logger.info("")
         logger.info("📈 Class Probabilities:")
-        for cls, prob in result["probabilities"].items():
-            bar = "█" * int(prob * 50)
-            logger.info(f"   {cls:12s}: {prob:6.1%} {bar}")
+        # for cls, prob in result["probabilities"].items():
+        #     bar = "█" * int(prob * 50)
+        #     logger.info(f"   {cls:12s}: {prob:6.1%} {bar}")
 
         # Explanation
         logger.info("")

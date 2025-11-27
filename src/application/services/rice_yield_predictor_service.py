@@ -24,6 +24,7 @@ from ...domain.use_cases.build_feature_matrix import BuildFeatureMatrixUseCase
 from ...domain.use_cases.train_model import TrainModelUseCase
 from ...domain.use_cases.predict_and_explain import PredictAndExplainUseCase
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -72,7 +73,7 @@ class RiceYieldPredictorService:
 
         # Runtime state
         self.predict_use_case: Optional[PredictAndExplainUseCase] = None
-        self.trained_contrast_patterns: Optional[Set[Tuple[str, ...]]] = None
+        self.trained_contrast_patterns: Optional[Tuple[Tuple[str, ...], ...]] = None
         self.feature_names: Optional[List[str]] = None
         self.class_labels: Optional[np.ndarray] = None
         self.contrast_report_df: Optional[pd.DataFrame] = None
@@ -206,12 +207,14 @@ class RiceYieldPredictorService:
         logger.info(f"   • {len(destructive_patterns)} Rare Catastrophic Patterns")
         logger.info(f"   • {len(breaker_events)} Golden Sequence Breakers")
 
-        # Step 3: Combine all patterns
-        all_candidate_patterns = set()
-        all_candidate_patterns.update(high_yield_patterns)
-        all_candidate_patterns.update(contrast_events)
-        all_candidate_patterns.update(destructive_patterns)
-        all_candidate_patterns.update(breaker_events)
+        # Step 3: Combine all patterns (maintain order with tuple of sorted tuples)
+        all_candidate_patterns_list = []
+        all_candidate_patterns_list.extend(high_yield_patterns)
+        all_candidate_patterns_list.extend(contrast_events)
+        all_candidate_patterns_list.extend(destructive_patterns)
+        all_candidate_patterns_list.extend(breaker_events)
+        # Sort for deterministic order
+        all_candidate_patterns = tuple(sorted(set(all_candidate_patterns_list), key=lambda x: (len(x), x)))
 
         logger.info(f"Selected {len(all_candidate_patterns)} highest-impact patterns")
 
@@ -231,7 +234,27 @@ class RiceYieldPredictorService:
             high_yield_patterns, contrast_events, destructive_patterns, breaker_events
         )
 
-        # Step 7: Save model with full metadata (including contrast report)
+        # Step 7: Save all mined patterns to JSON for single-season predictions
+        # IMPORTANT: Save patterns in the EXACT sorted order used for feature matrix
+        # This ensures pat_000, pat_001, etc. indices remain consistent between train/predict
+        import json
+        patterns_data = {
+            "high_yield_patterns": [list(p) for p in high_yield_patterns],
+            "contrast_events": [list(p) for p in contrast_events],
+            "destructive_patterns": [list(p) for p in destructive_patterns],
+            "breaker_events": [list(p) for p in breaker_events],
+            "all_candidate_patterns": [list(p) for p in all_candidate_patterns],  # Already sorted tuple
+            "pattern_index_mapping": {
+                f"pat_{i:03d}": list(p) for i, p in enumerate(all_candidate_patterns)
+            },
+        }
+        patterns_file = self.PATTERN_DIR / "all_patterns.json"
+        patterns_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(patterns_file, "w") as f:
+            json.dump(patterns_data, f, indent=2)
+        logger.info(f"✅ Saved all mined patterns to {patterns_file} (patterns_ordered={True})")
+
+        # Step 8: Save model with full metadata (including contrast report)
         model_path = self.model_repo.save_model(
             model,
             metadata={
@@ -241,7 +264,7 @@ class RiceYieldPredictorService:
                 "feature_names": feature_names,
                 "class_labels": class_labels.tolist(),
                 "n_contrast_patterns": len(all_candidate_patterns),
-                "contrast_patterns": [list(p) for p in all_candidate_patterns],
+                "contrast_patterns": list(all_candidate_patterns),  # Save as list for JSON, will be converted back to tuple
                 "metrics": metrics,
                 # Save contrast report as serializable dict
                 "contrast_report": (
@@ -252,7 +275,7 @@ class RiceYieldPredictorService:
             },
         )
 
-        # Step 8: Initialize predictor with ALL features
+        # Step 9: Initialize predictor with ALL features
         self.predict_use_case = PredictAndExplainUseCase(
             model=model,
             feature_names=feature_names,  # ✅ ALL features (numerical + patterns)
@@ -261,7 +284,7 @@ class RiceYieldPredictorService:
             contrast_report_df=contrast_report_df,
         )
 
-        # Step 9: Store state for prediction
+        # Step 10: Store state for prediction
         self.trained_contrast_patterns = all_candidate_patterns
         self.feature_names = feature_names
         self.class_labels = class_labels
@@ -336,24 +359,59 @@ class RiceYieldPredictorService:
         # Load model and metadata
         loaded_data = self.model_repo.load_model(model_path)
 
-        model = loaded_data["model"]
-        metadata = loaded_data["metadata"]
+        model = loaded_data.get("model")
+        metadata = loaded_data.get("metadata") or {}
 
-        # Reconstruct patterns as tuples
-        contrast_patterns = {tuple(p) for p in metadata["contrast_patterns"]}
+        # If metadata is missing or incomplete, attempt to infer reasonable defaults
+        if not metadata:
+            logger.warning("Loaded model has no metadata — attempting to infer defaults")
 
-        # Load contrast report from metadata
+        # Load mined patterns from JSON file if available
+        import json
+        contrast_patterns: Tuple[Tuple[str, ...], ...] = ()
+        patterns_file = self.PATTERN_DIR / "all_patterns.json"
+        if patterns_file.exists():
+            try:
+                with open(patterns_file, "r") as f:
+                    patterns_data = json.load(f)
+                # Load all candidate patterns (preferred, maintains order)
+                if "all_candidate_patterns" in patterns_data:
+                    contrast_patterns = tuple(tuple(p) for p in patterns_data["all_candidate_patterns"])
+                    logger.info(f"✅ Loaded {len(contrast_patterns)} mined patterns from {patterns_file}")
+                else:
+                    # Fallback: combine all individual pattern sets (with sorting for determinism)
+                    all_pats = []
+                    for key in ["high_yield_patterns", "contrast_events", "destructive_patterns", "breaker_events"]:
+                        if key in patterns_data:
+                            all_pats.extend(tuple(p) for p in patterns_data[key])
+                    contrast_patterns = tuple(sorted(set(all_pats), key=lambda x: (len(x), x)))
+            except Exception as e:
+                logger.warning(f"Failed to load mined patterns from {patterns_file}: {e}")
+        
+        # If no patterns file, try to get from metadata
+        if not contrast_patterns:
+            contrast_patterns_raw = metadata.get("contrast_patterns", [])
+            try:
+                # Sort for deterministic order
+                contrast_patterns = tuple(sorted((tuple(p) for p in contrast_patterns_raw), key=lambda x: (len(x), x)))
+            except Exception:
+                contrast_patterns = ()
+
+        # Contrast report DataFrame
         contrast_report_df = None
-        if "contrast_report" in metadata and metadata["contrast_report"] is not None:
-            contrast_report_df = pd.DataFrame(metadata["contrast_report"])
-            # Convert events back to lists if they were saved as strings
-            if "events" in contrast_report_df.columns:
-                contrast_report_df["events"] = contrast_report_df["events"].apply(
-                    lambda x: x if isinstance(x, list) else list(x)
-                )
-        else:
-            # Fallback: create a basic contrast report
-            logger.warning("No contrast report in metadata, creating basic report")
+        if "contrast_report" in metadata and metadata.get("contrast_report") is not None:
+            try:
+                contrast_report_df = pd.DataFrame(metadata.get("contrast_report"))
+                if "events" in contrast_report_df.columns:
+                    contrast_report_df["events"] = contrast_report_df["events"].apply(
+                        lambda x: x if isinstance(x, list) else list(x)
+                    )
+            except Exception:
+                logger.warning("Failed to parse contrast_report from metadata; falling back to basic report")
+                contrast_report_df = None
+
+        if contrast_report_df is None:
+            # Create a basic contrast report if none available
             contrast_report_df = self._create_contrast_report(
                 high_patterns=contrast_patterns,
                 contrast_events=set(),
@@ -361,24 +419,86 @@ class RiceYieldPredictorService:
                 breaker_events=set(),
             )
 
+        # Feature names
+        feature_names = metadata.get("feature_names")
+        # Prefer model-provided feature names when metadata missing or appears generic
+        def _looks_generic(names):
+            if not names:
+                return True
+            # generic if most names follow a 'feature_' or 'f_' pattern
+            cnt = sum(1 for n in names if isinstance(n, str) and (n.startswith("feature_") or n.startswith("f_")))
+            return cnt >= max(1, len(names) // 2)
+
+        if not feature_names or _looks_generic(feature_names):
+            # Try to infer feature count from metadata or model attributes
+            # Try to extract feature names from the model (final estimator)
+            try:
+                if hasattr(model, "feature_names_in_"):
+                    feature_names = list(getattr(model, "feature_names_in_") )
+                elif hasattr(model, "steps"):
+                    last = model.steps[-1][1]
+                    if hasattr(last, "feature_names_in_"):
+                        feature_names = list(getattr(last, "feature_names_in_") )
+                else:
+                    feature_names = None
+            except Exception:
+                feature_names = None
+
+            # Fallback to metadata n_features if still missing
+            if not feature_names:
+                n_features = None
+                if "n_features" in metadata:
+                    n_features = int(metadata.get("n_features"))
+                else:
+                    try:
+                        if hasattr(model, "coef_"):
+                            n_features = int(model.coef_.shape[-1])
+                        elif hasattr(model, "steps"):
+                            last = model.steps[-1][1]
+                            if hasattr(last, "coef_"):
+                                n_features = int(last.coef_.shape[-1])
+                    except Exception:
+                        n_features = None
+
+                if n_features is not None:
+                    feature_names = [f"f_{i}" for i in range(n_features)]
+                    logger.warning(f"feature_names not found in metadata; using generic names ({n_features} features)")
+                else:
+                    feature_names = []
+                    logger.warning("feature_names not found and could not be inferred; feature alignment may fail")
+
+        # Class labels
+        class_labels = metadata.get("class_labels")
+        if not class_labels:
+            if hasattr(model, "classes_"):
+                class_labels = list(getattr(model, "classes_"))
+            else:
+                # safe default
+                class_labels = ["Low", "Medium", "High"]
+                logger.warning("class_labels not found in metadata; using default labels: Low/Medium/High")
+
         # Reconstruct the PredictAndExplainUseCase
-        self.predict_use_case = PredictAndExplainUseCase(
-            model=model,
-            feature_names=metadata["feature_names"],
-            class_labels=np.array(metadata["class_labels"]),
-            contrast_patterns=contrast_patterns,
-            contrast_report_df=contrast_report_df,
-        )
+        try:
+            self.predict_use_case = PredictAndExplainUseCase(
+                model=model,
+                feature_names=feature_names,
+                class_labels=np.array(class_labels),
+                contrast_patterns=contrast_patterns,
+                contrast_report_df=contrast_report_df,
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize PredictAndExplainUseCase: {e}")
+            raise
 
         # Store state
         self.trained_contrast_patterns = contrast_patterns
-        self.feature_names = metadata["feature_names"]
-        self.class_labels = np.array(metadata["class_labels"])
+        self.feature_names = feature_names
+        self.class_labels = np.array(class_labels)
         self.contrast_report_df = contrast_report_df
 
         logger.info(f"✅ Model loaded successfully")
         logger.info(f"   Features: {len(self.feature_names)}")
-        logger.info(f"   Patterns: {len(self.trained_contrast_patterns)}")
+        logger.info(f"   Patterns: {len(self.trained_contrast_patterns)} (ordered)")
         logger.info(f"   Classes: {self.class_labels.tolist()}")
         logger.info(f"   Training date: {metadata.get('training_date', 'unknown')}")
         logger.info(f"   Accuracy: {metadata.get('metrics', {}).get('accuracy', 'N/A')}")
@@ -453,6 +573,13 @@ class RiceYieldPredictorService:
         # Verify feature alignment
         # Align columns to the feature names used during training to avoid model errors
         try:
+            # If feature_names were not available when loading the model, adopt current X columns
+            if not self.feature_names:
+                logger.warning(
+                    "Feature names missing from loaded model metadata — using current feature matrix columns as feature_names"
+                )
+                self.feature_names = list(X.columns)
+
             expected = list(self.feature_names)
             actual = list(X.columns)
         except Exception:
@@ -510,4 +637,5 @@ class RiceYieldPredictorService:
                 "numerical": sum(1 for f in self.feature_names if not f.startswith("pat_")),
                 "patterns": sum(1 for f in self.feature_names if f.startswith("pat_")),
             },
+            "patterns_ordered": True,  # Indicate that patterns are deterministically ordered
         }

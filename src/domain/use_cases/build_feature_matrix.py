@@ -2,7 +2,7 @@
 
 import time
 import logging
-from typing import Tuple, Set
+from typing import Tuple, Set, Union
 import pandas as pd
 import numpy as np
 from sklearn.feature_selection import SelectKBest, mutual_info_classif, chi2, f_classif
@@ -23,12 +23,17 @@ class BuildFeatureMatrixUseCase:
         self,
         df_agg: pd.DataFrame,
         df_sequences: pd.DataFrame,
-        patterns: Set[Tuple[str, ...]],
+        patterns: Union[Set[Tuple[str, ...]], Tuple[Tuple[str, ...], ...]],
         pattern_type: str = "contrast",
         feature_selection: bool = False,
         num_top_features: int = 30,
         is_use_mutual_info: bool = False,
     ) -> Tuple[pd.DataFrame, np.ndarray, list, np.ndarray]:
+        # CRITICAL: Convert set to sorted tuple to ensure deterministic ordering
+        # This prevents pat_000, pat_001, etc. from being reshuffled between train/predict
+        if isinstance(patterns, set):
+            patterns = tuple(sorted(patterns, key=lambda x: (len(x), x)))
+        
         logger.info(
             f"Building feature matrix using {len(patterns)} {pattern_type} patterns (SEQUENTIAL MATCHING)"
         )
