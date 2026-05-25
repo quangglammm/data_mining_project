@@ -1,0 +1,29 @@
+pattern,events,length
+stage_1_Mát-Khô → stage_2_Mát-Khô,"['stage_1_Mát-Khô', 'stage_2_Mát-Khô']",2
+stage_1_Mát-Khô → stage_3_Mát-Khô,"['stage_1_Mát-Khô', 'stage_3_Mát-Khô']",2
+stage_1_Mát-Vừa → stage_3_Mát-Khô,"['stage_1_Mát-Vừa', 'stage_3_Mát-Khô']",2
+stage_1_Mát-Vừa → stage_4_Mát-Khô,"['stage_1_Mát-Vừa', 'stage_4_Mát-Khô']",2
+stage_1_Nóng-Khô → stage_2_Nóng-Vừa,"['stage_1_Nóng-Khô', 'stage_2_Nóng-Vừa']",2
+stage_1_Nóng-Khô → stage_3_Nóng-Vừa,"['stage_1_Nóng-Khô', 'stage_3_Nóng-Vừa']",2
+stage_1_Nóng-Khô → stage_4_Nóng-Vừa,"['stage_1_Nóng-Khô', 'stage_4_Nóng-Vừa']",2
+stage_1_Vừa-Ướt → stage_2_Vừa-Ướt,"['stage_1_Vừa-Ướt', 'stage_2_Vừa-Ướt']",2
+stage_1_Vừa-Ướt → stage_3_Vừa-Ướt,"['stage_1_Vừa-Ướt', 'stage_3_Vừa-Ướt']",2
+stage_1_Vừa-Ướt → stage_4_Vừa-Vừa,"['stage_1_Vừa-Ướt', 'stage_4_Vừa-Vừa']",2
+stage_1_Vừa-Ướt → stage_4_Vừa-Ướt,"['stage_1_Vừa-Ướt', 'stage_4_Vừa-Ướt']",2
+stage_2_Mát-Khô → stage_3_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô']",2
+stage_2_Mát-Khô → stage_4_Mát-Khô,"['stage_2_Mát-Khô', 'stage_4_Mát-Khô']",2
+stage_2_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_5_Mát-Khô']",2
+stage_2_Nóng-Vừa → stage_3_Nóng-Vừa,"['stage_2_Nóng-Vừa', 'stage_3_Nóng-Vừa']",2
+stage_2_Nóng-Vừa → stage_4_Nóng-Vừa,"['stage_2_Nóng-Vừa', 'stage_4_Nóng-Vừa']",2
+stage_2_Vừa-Ướt → stage_4_Vừa-Ướt,"['stage_2_Vừa-Ướt', 'stage_4_Vừa-Ướt']",2
+stage_3_Mát-Khô → stage_4_Mát-Khô,"['stage_3_Mát-Khô', 'stage_4_Mát-Khô']",2
+stage_3_Mát-Khô → stage_5_Mát-Khô,"['stage_3_Mát-Khô', 'stage_5_Mát-Khô']",2
+stage_3_Nóng-Vừa → stage_4_Nóng-Vừa,"['stage_3_Nóng-Vừa', 'stage_4_Nóng-Vừa']",2
+stage_4_Mát-Khô → stage_5_Mát-Khô,"['stage_4_Mát-Khô', 'stage_5_Mát-Khô']",2
+stage_1_Mát-Khô → stage_2_Mát-Khô → stage_3_Mát-Khô,"['stage_1_Mát-Khô', 'stage_2_Mát-Khô', 'stage_3_Mát-Khô']",3
+stage_1_Mát-Vừa → stage_3_Mát-Khô → stage_4_Mát-Khô,"['stage_1_Mát-Vừa', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô']",3
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô']",3
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_5_Mát-Khô']",3
+stage_2_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô']",3
+stage_3_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô,"['stage_3_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô']",3
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô']",4

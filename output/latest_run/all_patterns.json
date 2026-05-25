@@ -1,0 +1,385 @@
+{
+  "high_yield_patterns": [
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_V\u1eeba-Kh\u00f4"
+    ],
+    [
+      "stage_2_V\u1eeba-\u01af\u1edbt",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_2_V\u1eeba-\u01af\u1edbt",
+      "stage_3_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_3_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_2_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_4_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_3_V\u1eeba-V\u1eeba",
+      "stage_4_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-V\u1eeba",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-V\u1eeba",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_2_M\u00e1t-Kh\u00f4"
+    ]
+  ],
+  "contrast_events": [
+    [
+      "stage_3_V\u1eeba-Kh\u00f4"
+    ]
+  ],
+  "destructive_patterns": [],
+  "breaker_events": [
+    [
+      "stage_1_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_2_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_5_V\u1eeba-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_3_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_4_M\u00e1t-\u01af\u1edbt"
+    ],
+    [
+      "stage_3_V\u1eeba-Kh\u00f4"
+    ],
+    [
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_5_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_1_M\u00e1t-\u01af\u1edbt"
+    ]
+  ],
+  "all_candidate_patterns": [
+    [
+      "stage_1_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_1_M\u00e1t-\u01af\u1edbt"
+    ],
+    [
+      "stage_2_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_3_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_3_V\u1eeba-Kh\u00f4"
+    ],
+    [
+      "stage_4_M\u00e1t-\u01af\u1edbt"
+    ],
+    [
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_5_M\u00e1t-V\u1eeba"
+    ],
+    [
+      "stage_5_V\u1eeba-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_2_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-V\u1eeba",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_1_M\u00e1t-V\u1eeba",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_2_V\u1eeba-\u01af\u1edbt",
+      "stage_3_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_2_V\u1eeba-\u01af\u1edbt",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_3_V\u1eeba-V\u1eeba",
+      "stage_4_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_3_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_V\u1eeba-Kh\u00f4"
+    ],
+    [
+      "stage_4_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ]
+  ],
+  "pattern_index_mapping": {
+    "pat_000": [
+      "stage_1_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_001": [
+      "stage_1_M\u00e1t-V\u1eeba"
+    ],
+    "pat_002": [
+      "stage_1_M\u00e1t-\u01af\u1edbt"
+    ],
+    "pat_003": [
+      "stage_2_M\u00e1t-V\u1eeba"
+    ],
+    "pat_004": [
+      "stage_3_M\u00e1t-V\u1eeba"
+    ],
+    "pat_005": [
+      "stage_3_V\u1eeba-Kh\u00f4"
+    ],
+    "pat_006": [
+      "stage_4_M\u00e1t-\u01af\u1edbt"
+    ],
+    "pat_007": [
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_008": [
+      "stage_5_M\u00e1t-V\u1eeba"
+    ],
+    "pat_009": [
+      "stage_5_V\u1eeba-Kh\u00f4"
+    ],
+    "pat_010": [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_2_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_011": [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_012": [
+      "stage_1_M\u00e1t-V\u1eeba",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_013": [
+      "stage_1_M\u00e1t-V\u1eeba",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_014": [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_015": [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_016": [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_017": [
+      "stage_2_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    "pat_018": [
+      "stage_2_V\u1eeba-\u01af\u1edbt",
+      "stage_3_V\u1eeba-V\u1eeba"
+    ],
+    "pat_019": [
+      "stage_2_V\u1eeba-\u01af\u1edbt",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    "pat_020": [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_021": [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_022": [
+      "stage_3_V\u1eeba-V\u1eeba",
+      "stage_4_V\u1eeba-V\u1eeba"
+    ],
+    "pat_023": [
+      "stage_3_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    "pat_024": [
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_025": [
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_V\u1eeba-Kh\u00f4"
+    ],
+    "pat_026": [
+      "stage_4_V\u1eeba-V\u1eeba",
+      "stage_5_V\u1eeba-V\u1eeba"
+    ],
+    "pat_027": [
+      "stage_1_M\u00e1t-Kh\u00f4",
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_028": [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_029": [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_030": [
+      "stage_2_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ],
+    "pat_031": [
+      "stage_3_M\u00e1t-Kh\u00f4",
+      "stage_4_M\u00e1t-Kh\u00f4",
+      "stage_5_M\u00e1t-Kh\u00f4"
+    ]
+  }
+}

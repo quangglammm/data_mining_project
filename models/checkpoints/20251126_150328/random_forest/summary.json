@@ -1,0 +1,13 @@
+{
+  "model_name": "random_forest",
+  "timestamp": "20251126_150328",
+  "metrics": {
+    "accuracy": 0.47761194029850745,
+    "f1_macro": 0.4747517795688367,
+    "f1_weighted": 0.4747517795688367,
+    "precision_macro": 0.47540697884977545,
+    "recall_macro": 0.47761194029850745
+  },
+  "n_samples": 800,
+  "n_features": 52
+}

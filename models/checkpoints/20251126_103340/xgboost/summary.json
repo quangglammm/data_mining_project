@@ -1,0 +1,13 @@
+{
+  "model_name": "xgboost",
+  "timestamp": "20251126_103340",
+  "metrics": {
+    "accuracy": 0.417910447761194,
+    "f1_macro": 0.41485580147551976,
+    "f1_weighted": 0.4148558014755198,
+    "precision_macro": 0.41645903334194884,
+    "recall_macro": 0.41791044776119407
+  },
+  "n_samples": 800,
+  "n_features": 52
+}

@@ -1,0 +1,13 @@
+{
+  "model_name": "svm",
+  "timestamp": "20251126_150328",
+  "metrics": {
+    "accuracy": 0.46766169154228854,
+    "f1_macro": 0.4655774333193688,
+    "f1_weighted": 0.46557743331936874,
+    "precision_macro": 0.4730792498487599,
+    "recall_macro": 0.4676616915422885
+  },
+  "n_samples": 800,
+  "n_features": 52
+}

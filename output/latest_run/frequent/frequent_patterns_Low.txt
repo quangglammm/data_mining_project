@@ -1,0 +1,13 @@
+FREQUENT PATTERNS — LOW YIELD SEASONS
+Total seasons: 334 | Min support: 12.0%
+Pattern length: 2–3
+================================================================================
+
+ 1. stage_3_Mát-Khô → stage_4_Mát-Khô  (n=62, 18.56%)
+ 2. stage_2_Vừa-Ướt → stage_3_Vừa-Vừa  (n=51, 15.27%)
+ 3. stage_4_Mát-Khô → stage_5_Mát-Khô  (n=50, 14.97%)
+ 4. stage_2_Mát-Khô → stage_4_Mát-Khô  (n=47, 14.07%)
+ 5. stage_1_Mát-Vừa → stage_4_Mát-Khô  (n=46, 13.77%)
+ 6. stage_1_Mát-Vừa → stage_3_Mát-Khô  (n=45, 13.47%)
+ 7. stage_3_Mát-Khô → stage_5_Mát-Khô  (n=44, 13.17%)
+ 8. stage_1_Mát-Vừa → stage_3_Mát-Khô → stage_4_Mát-Khô  (n=41, 12.28%)

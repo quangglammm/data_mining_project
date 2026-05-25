@@ -1,0 +1,26 @@
+3 NHÓM NGUY CƠ MẤT MÙA LÚA - ĐỊNH DẠNG CHUẨN
+================================================================================
+
+1. TỬ HUYỆT PHỔ BIẾN (không mũi tên)
+• stage_3_Vừa-Khô
+
+2. SÁT THỦ THẦM LẶNG (có mũi tên)
+• stage_2_Mát-Vừa → stage_3_Mát-Vừa
+
+• stage_4_Mát-Khô → stage_5_Vừa-Vừa
+
+• stage_2_Vừa-Vừa → stage_3_Mát-Khô
+
+3. ĐIỂM GÃY CHUỖI VÀNG (không mũi tên)
+• stage_1_Vừa-Khô
+
+• stage_4_Vừa-Khô
+
+• stage_3_Mát-Ướt
+
+• stage_3_Nóng-Khô
+
+• stage_5_Nóng-Vừa
+
+• stage_2_Vừa-Vừa
+

@@ -1,0 +1,7 @@
+pattern,freq_in_low,support_low_%,prob_high_if_seen,yield_drop
+stage_2_Mát-Khô → stage_3_Vừa-Khô,17,5.09,0.235,0.765
+stage_3_Vừa-Khô → stage_4_Nóng-Khô,16,4.79,0.125,0.875
+stage_2_Mát-Vừa → stage_5_Mát-Khô,23,6.89,0.13,0.87
+stage_4_Mát-Ướt → stage_5_Vừa-Vừa,16,4.79,0.188,0.812
+stage_3_Nóng-Vừa → stage_5_Mát-Ướt,13,3.89,0.231,0.769
+stage_2_Vừa-Ướt → stage_4_Nóng-Ướt,13,3.89,0.154,0.846

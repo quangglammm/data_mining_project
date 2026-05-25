@@ -1,0 +1,19 @@
+3 NHÓM NGUY CƠ MẤT MÙA LÚA – PHIÊN BẢN CẬP NHẬT
+================================================================================
+
+1. TỬ HUYỆT PHỔ BIẾN
+• stage_3_Vừa-Khô (growth 4.4×)
+
+2. SÁT THỦ THẦM LẶNG
+
+3. ĐIỂM GÃY CHUỖI VÀNG – TẦN SUẤT CAO NHẤT
+• stage_1_Mát-Vừa → phá vỡ 36 lần (31.0% trường hợp)
+• stage_2_Mát-Vừa → phá vỡ 21 lần (18.1% trường hợp)
+• stage_5_Vừa-Khô → phá vỡ 12 lần (10.3% trường hợp)
+• stage_1_Mát-Khô → phá vỡ 8 lần (6.9% trường hợp)
+• stage_3_Mát-Vừa → phá vỡ 8 lần (6.9% trường hợp)
+• stage_4_Mát-Ướt → phá vỡ 6 lần (5.2% trường hợp)
+• stage_3_Vừa-Khô → phá vỡ 4 lần (3.4% trường hợp)
+• stage_5_Mát-Khô → phá vỡ 4 lần (3.4% trường hợp)
+• stage_5_Mát-Vừa → phá vỡ 3 lần (2.6% trường hợp)
+• stage_1_Mát-Ướt → phá vỡ 3 lần (2.6% trường hợp)

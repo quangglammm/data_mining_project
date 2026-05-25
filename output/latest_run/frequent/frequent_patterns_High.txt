@@ -1,0 +1,27 @@
+FREQUENT PATTERNS — HIGH YIELD SEASONS
+Total seasons: 334 | Min support: 12.0%
+Pattern length: 2–3
+================================================================================
+
+ 1. stage_3_Mát-Khô → stage_4_Mát-Khô  (n=94, 28.14%)
+ 2. stage_2_Mát-Khô → stage_3_Mát-Khô  (n=88, 26.35%)
+ 3. stage_2_Mát-Khô → stage_4_Mát-Khô  (n=82, 24.55%)
+ 4. stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô  (n=77, 23.05%)
+ 5. stage_3_Mát-Khô → stage_5_Mát-Khô  (n=64, 19.16%)
+ 6. stage_4_Mát-Khô → stage_5_Mát-Khô  (n=63, 18.86%)
+ 7. stage_3_Vừa-Vừa → stage_5_Vừa-Vừa  (n=61, 18.26%)
+ 8. stage_2_Mát-Khô → stage_5_Mát-Khô  (n=59, 17.66%)
+ 9. stage_3_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô  (n=59, 17.66%)
+10. stage_2_Mát-Khô → stage_3_Mát-Khô → stage_5_Mát-Khô  (n=55, 16.47%)
+11. stage_2_Vừa-Ướt → stage_3_Vừa-Vừa  (n=54, 16.17%)
+12. stage_2_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô  (n=54, 16.17%)
+13. stage_3_Vừa-Vừa → stage_4_Vừa-Vừa  (n=50, 14.97%)
+14. stage_4_Vừa-Vừa → stage_5_Vừa-Vừa  (n=49, 14.67%)
+15. stage_2_Vừa-Ướt → stage_5_Vừa-Vừa  (n=48, 14.37%)
+16. stage_1_Mát-Khô → stage_3_Mát-Khô  (n=46, 13.77%)
+17. stage_1_Mát-Vừa → stage_4_Mát-Khô  (n=46, 13.77%)
+18. stage_1_Mát-Khô → stage_2_Mát-Khô  (n=44, 13.17%)
+19. stage_1_Mát-Khô → stage_2_Mát-Khô → stage_3_Mát-Khô  (n=42, 12.57%)
+20. stage_1_Mát-Vừa → stage_3_Mát-Khô  (n=41, 12.28%)
+21. stage_2_Vừa-Vừa → stage_5_Vừa-Vừa  (n=41, 12.28%)
+22. stage_4_Mát-Khô → stage_5_Vừa-Khô  (n=40, 11.98%)

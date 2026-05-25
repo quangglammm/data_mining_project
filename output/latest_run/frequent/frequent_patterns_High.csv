@@ -1,0 +1,23 @@
+pattern,frequency,support_%
+"('stage_3_Mát-Khô', 'stage_4_Mát-Khô')",94,28.143712574850298
+"('stage_2_Mát-Khô', 'stage_3_Mát-Khô')",88,26.34730538922156
+"('stage_2_Mát-Khô', 'stage_4_Mát-Khô')",82,24.550898203592812
+"('stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô')",77,23.053892215568865
+"('stage_3_Mát-Khô', 'stage_5_Mát-Khô')",64,19.16167664670659
+"('stage_4_Mát-Khô', 'stage_5_Mát-Khô')",63,18.862275449101794
+"('stage_3_Vừa-Vừa', 'stage_5_Vừa-Vừa')",61,18.263473053892216
+"('stage_2_Mát-Khô', 'stage_5_Mát-Khô')",59,17.664670658682635
+"('stage_3_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô')",59,17.664670658682635
+"('stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_5_Mát-Khô')",55,16.46706586826347
+"('stage_2_Vừa-Ướt', 'stage_3_Vừa-Vừa')",54,16.16766467065868
+"('stage_2_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô')",54,16.16766467065868
+"('stage_3_Vừa-Vừa', 'stage_4_Vừa-Vừa')",50,14.97005988023952
+"('stage_4_Vừa-Vừa', 'stage_5_Vừa-Vừa')",49,14.67065868263473
+"('stage_2_Vừa-Ướt', 'stage_5_Vừa-Vừa')",48,14.37125748502994
+"('stage_1_Mát-Khô', 'stage_3_Mát-Khô')",46,13.77245508982036
+"('stage_1_Mát-Vừa', 'stage_4_Mát-Khô')",46,13.77245508982036
+"('stage_1_Mát-Khô', 'stage_2_Mát-Khô')",44,13.17365269461078
+"('stage_1_Mát-Khô', 'stage_2_Mát-Khô', 'stage_3_Mát-Khô')",42,12.574850299401197
+"('stage_1_Mát-Vừa', 'stage_3_Mát-Khô')",41,12.275449101796406
+"('stage_2_Vừa-Vừa', 'stage_5_Vừa-Vừa')",41,12.275449101796406
+"('stage_4_Mát-Khô', 'stage_5_Vừa-Khô')",40,11.976047904191617

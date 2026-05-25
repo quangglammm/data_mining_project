@@ -1,0 +1,23 @@
+CONTRAST WEATHER PATTERNS FOR RICE YIELD (Mekong Delta)
+Growth threshold: High ≥3.0× | Low ≥6.0×
+Min support in target class: ≥6.0%
+===============================================================================================
+
+HIGH-YIELD MARKERS — Golden sequences for top yield
+--------------------------------------------------------------------------------
+• stage_1_Mát-Khô → stage_2_Mát-Khô → stage_3_Mát-Khô
+   High: 11.38% | Low: 2.1% | Growth: 5.43×
+   → Ideal weather progression
+
+• stage_1_Mát-Khô → stage_3_Mát-Khô
+   High: 12.28% | Low: 2.4% | Growth: 5.12×
+   → Ideal weather progression
+
+• stage_1_Mát-Khô → stage_2_Mát-Khô
+   High: 12.57% | Low: 3.59% | Growth: 3.5×
+   → Ideal weather progression
+
+• stage_2_Mát-Khô → stage_3_Mát-Khô → stage_5_Mát-Khô
+   High: 14.97% | Low: 4.49% | Growth: 3.33×
+   → Ideal weather progression
+

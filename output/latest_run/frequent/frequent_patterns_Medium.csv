@@ -1,0 +1,14 @@
+pattern,frequency,support_%
+"('stage_3_Mát-Khô', 'stage_4_Mát-Khô')",64,19.21921921921922
+"('stage_2_Vừa-Ướt', 'stage_3_Vừa-Vừa')",54,16.216216216216218
+"('stage_3_Vừa-Vừa', 'stage_4_Vừa-Vừa')",51,15.315315315315313
+"('stage_2_Mát-Khô', 'stage_3_Mát-Khô')",49,14.714714714714713
+"('stage_2_Mát-Khô', 'stage_4_Mát-Khô')",47,14.114114114114114
+"('stage_3_Mát-Khô', 'stage_5_Mát-Khô')",47,14.114114114114114
+"('stage_4_Mát-Khô', 'stage_5_Mát-Khô')",47,14.114114114114114
+"('stage_4_Vừa-Vừa', 'stage_5_Vừa-Vừa')",45,13.513513513513514
+"('stage_1_Nóng-Khô', 'stage_3_Nóng-Vừa')",43,12.912912912912914
+"('stage_3_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô')",43,12.912912912912914
+"('stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô')",42,12.612612612612612
+"('stage_2_Vừa-Ướt', 'stage_4_Vừa-Vừa')",41,12.312312312312311
+"('stage_3_Vừa-Vừa', 'stage_5_Vừa-Vừa')",40,12.012012012012011

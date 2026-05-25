@@ -1,0 +1,29 @@
+ALL UNIQUE FREQUENT PATTERNS (Total: 25)
+Min support: 12.0% | Length: 2–3
+================================================================================
+
+stage_1_Mát-Khô → stage_2_Mát-Khô
+stage_1_Mát-Khô → stage_3_Mát-Khô
+stage_1_Mát-Vừa → stage_3_Mát-Khô
+stage_1_Mát-Vừa → stage_4_Mát-Khô
+stage_1_Nóng-Khô → stage_3_Nóng-Vừa
+stage_2_Mát-Khô → stage_3_Mát-Khô
+stage_2_Mát-Khô → stage_4_Mát-Khô
+stage_2_Mát-Khô → stage_5_Mát-Khô
+stage_2_Vừa-Vừa → stage_5_Vừa-Vừa
+stage_2_Vừa-Ướt → stage_3_Vừa-Vừa
+stage_2_Vừa-Ướt → stage_4_Vừa-Vừa
+stage_2_Vừa-Ướt → stage_5_Vừa-Vừa
+stage_3_Mát-Khô → stage_4_Mát-Khô
+stage_3_Mát-Khô → stage_5_Mát-Khô
+stage_3_Vừa-Vừa → stage_4_Vừa-Vừa
+stage_3_Vừa-Vừa → stage_5_Vừa-Vừa
+stage_4_Mát-Khô → stage_5_Mát-Khô
+stage_4_Mát-Khô → stage_5_Vừa-Khô
+stage_4_Vừa-Vừa → stage_5_Vừa-Vừa
+stage_1_Mát-Khô → stage_2_Mát-Khô → stage_3_Mát-Khô
+stage_1_Mát-Vừa → stage_3_Mát-Khô → stage_4_Mát-Khô
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_5_Mát-Khô
+stage_2_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô
+stage_3_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô

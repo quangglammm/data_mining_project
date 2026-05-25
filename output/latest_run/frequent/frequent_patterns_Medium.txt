@@ -1,0 +1,18 @@
+FREQUENT PATTERNS — MEDIUM YIELD SEASONS
+Total seasons: 333 | Min support: 12.0%
+Pattern length: 2–3
+================================================================================
+
+ 1. stage_3_Mát-Khô → stage_4_Mát-Khô  (n=64, 19.22%)
+ 2. stage_2_Vừa-Ướt → stage_3_Vừa-Vừa  (n=54, 16.22%)
+ 3. stage_3_Vừa-Vừa → stage_4_Vừa-Vừa  (n=51, 15.32%)
+ 4. stage_2_Mát-Khô → stage_3_Mát-Khô  (n=49, 14.71%)
+ 5. stage_2_Mát-Khô → stage_4_Mát-Khô  (n=47, 14.11%)
+ 6. stage_3_Mát-Khô → stage_5_Mát-Khô  (n=47, 14.11%)
+ 7. stage_4_Mát-Khô → stage_5_Mát-Khô  (n=47, 14.11%)
+ 8. stage_4_Vừa-Vừa → stage_5_Vừa-Vừa  (n=45, 13.51%)
+ 9. stage_1_Nóng-Khô → stage_3_Nóng-Vừa  (n=43, 12.91%)
+10. stage_3_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô  (n=43, 12.91%)
+11. stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô  (n=42, 12.61%)
+12. stage_2_Vừa-Ướt → stage_4_Vừa-Vừa  (n=41, 12.31%)
+13. stage_3_Vừa-Vừa → stage_5_Vừa-Vừa  (n=40, 12.01%)

@@ -1,0 +1,11 @@
+events,pattern,break_count,percentage,note
+"('stage_1_Mát-Vừa',)",stage_1_Mát-Vừa,36,31.0,Phá vỡ chuỗi vàng 36 lần
+"('stage_2_Mát-Vừa',)",stage_2_Mát-Vừa,21,18.1,Phá vỡ chuỗi vàng 21 lần
+"('stage_5_Vừa-Khô',)",stage_5_Vừa-Khô,12,10.3,Phá vỡ chuỗi vàng 12 lần
+"('stage_1_Mát-Khô',)",stage_1_Mát-Khô,8,6.9,Phá vỡ chuỗi vàng 8 lần
+"('stage_3_Mát-Vừa',)",stage_3_Mát-Vừa,8,6.9,Phá vỡ chuỗi vàng 8 lần
+"('stage_4_Mát-Ướt',)",stage_4_Mát-Ướt,6,5.2,Phá vỡ chuỗi vàng 6 lần
+"('stage_3_Vừa-Khô',)",stage_3_Vừa-Khô,4,3.4,Phá vỡ chuỗi vàng 4 lần
+"('stage_5_Mát-Khô',)",stage_5_Mát-Khô,4,3.4,Phá vỡ chuỗi vàng 4 lần
+"('stage_5_Mát-Vừa',)",stage_5_Mát-Vừa,3,2.6,Phá vỡ chuỗi vàng 3 lần
+"('stage_1_Mát-Ướt',)",stage_1_Mát-Ướt,3,2.6,Phá vỡ chuỗi vàng 3 lần

@@ -1,0 +1,13 @@
+{
+  "model_name": "knn",
+  "timestamp": "20251126_131028",
+  "metrics": {
+    "accuracy": 0.43781094527363185,
+    "f1_macro": 0.42898146933034526,
+    "f1_weighted": 0.4289814693303453,
+    "precision_macro": 0.4263782413185158,
+    "recall_macro": 0.43781094527363185
+  },
+  "n_samples": 800,
+  "n_features": 52
+}

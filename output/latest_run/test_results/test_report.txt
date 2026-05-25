@@ -1,0 +1,77 @@
+======================================================================
+TEST RESULTS REPORT
+======================================================================
+
+MODEL PERFORMANCE COMPARISON
+----------------------------------------------------------------------
+              Model  Accuracy  F1-Macro  F1-Weighted  Precision-Macro  Recall-Macro Log Loss
+logistic_regression  0.482587  0.480365     0.480365         0.480878      0.482587     None
+           lightgbm  0.482587  0.476540     0.476540         0.472931      0.482587     None
+      random_forest  0.477612  0.474752     0.474752         0.475407      0.477612     None
+                svm  0.467662  0.465577     0.465577         0.473079      0.467662     None
+                mlp  0.442786  0.432527     0.432527         0.432487      0.442786     None
+                knn  0.437811  0.428981     0.428981         0.426378      0.437811     None
+            xgboost  0.422886  0.419618     0.419618         0.421025      0.422886     None
+
+DETAILED RESULTS: knn
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4378
+F1-Macro:      0.4290
+F1-Weighted:   0.4290
+Precision:     0.4264
+Recall:        0.4378
+
+DETAILED RESULTS: lightgbm
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4826
+F1-Macro:      0.4765
+F1-Weighted:   0.4765
+Precision:     0.4729
+Recall:        0.4826
+
+DETAILED RESULTS: logistic_regression
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4826
+F1-Macro:      0.4804
+F1-Weighted:   0.4804
+Precision:     0.4809
+Recall:        0.4826
+
+DETAILED RESULTS: mlp
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4428
+F1-Macro:      0.4325
+F1-Weighted:   0.4325
+Precision:     0.4325
+Recall:        0.4428
+
+DETAILED RESULTS: random_forest
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4776
+F1-Macro:      0.4748
+F1-Weighted:   0.4748
+Precision:     0.4754
+Recall:        0.4776
+
+DETAILED RESULTS: svm
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4677
+F1-Macro:      0.4656
+F1-Weighted:   0.4656
+Precision:     0.4731
+Recall:        0.4677
+
+DETAILED RESULTS: xgboost
+----------------------------------------------------------------------
+Test Set Size: 201 samples
+Accuracy:      0.4229
+F1-Macro:      0.4196
+F1-Weighted:   0.4196
+Precision:     0.4210
+Recall:        0.4229

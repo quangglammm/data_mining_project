@@ -1,0 +1,13 @@
+{
+  "model_name": "mlp",
+  "timestamp": "20251126_131028",
+  "metrics": {
+    "accuracy": 0.4427860696517413,
+    "f1_macro": 0.4325265686088613,
+    "f1_weighted": 0.4325265686088613,
+    "precision_macro": 0.4324870246606105,
+    "recall_macro": 0.44278606965174133
+  },
+  "n_samples": 800,
+  "n_features": 52
+}

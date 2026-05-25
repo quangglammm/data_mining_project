@@ -1,0 +1,13 @@
+{
+  "model_name": "lightgbm",
+  "timestamp": "20251126_130912",
+  "metrics": {
+    "accuracy": 0.48258706467661694,
+    "f1_macro": 0.47653999421180343,
+    "f1_weighted": 0.47653999421180343,
+    "precision_macro": 0.47293050943649556,
+    "recall_macro": 0.4825870646766169
+  },
+  "n_samples": 800,
+  "n_features": 52
+}

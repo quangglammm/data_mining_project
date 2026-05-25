@@ -1,0 +1,9 @@
+pattern,events,support_high,support_low,growth_rate,type,strength
+stage_1_Mát-Khô → stage_2_Mát-Khô → stage_3_Mát-Khô,"['stage_1_Mát-Khô', 'stage_2_Mát-Khô', 'stage_3_Mát-Khô']",0.10650887573964497,0.024024024025024023,4.4334319524781804,High-yield marker,moderate
+stage_1_Mát-Khô → stage_3_Mát-Khô,"['stage_1_Mát-Khô', 'stage_3_Mát-Khô']",0.11834319526627218,0.027027027028027027,4.3786982246900585,High-yield marker,moderate
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_5_Mát-Khô']",0.1390532544378698,0.04504504504604504,3.086982248452179,High-yield marker,moderate
+stage_1_Mát-Khô → stage_2_Mát-Khô,"['stage_1_Mát-Khô', 'stage_2_Mát-Khô']",0.11834319526627218,0.03903903904003904,3.0314064632814754,High-yield marker,moderate
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô', 'stage_5_Mát-Khô']",0.11834319526627218,0.042042042043042044,2.8148774301950916,High-yield marker,moderate
+stage_2_Mát-Khô → stage_3_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô']",0.2485207100591716,0.10510510510610512,2.3644970413976214,High-yield marker,moderate
+stage_2_Mát-Khô → stage_3_Mát-Khô → stage_4_Mát-Khô,"['stage_2_Mát-Khô', 'stage_3_Mát-Khô', 'stage_4_Mát-Khô']",0.20118343195266272,0.09009009009109009,2.2331360946497685,High-yield marker,moderate
+stage_2_Mát-Khô → stage_5_Mát-Khô,"['stage_2_Mát-Khô', 'stage_5_Mát-Khô']",0.15088757396449703,0.07207207207307208,2.093565088728348,High-yield marker,moderate
